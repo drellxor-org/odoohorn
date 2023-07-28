@@ -1,0 +1,27 @@
+version: '3.1'
+services:
+  odoohorn:
+    build:
+      context: .
+      args:
+        RUNNING_ENV: development
+    env_file: config/development/.env
+    depends_on:
+      - postgres
+    ports:
+      - "8069:8069"
+    volumes:
+      - ./addons:/mnt/extra-addons
+      - ./config/development/odoo.conf:/etc/odoo/odoo.conf
+    extra_hosts:
+      - "services.openerp.com:127.0.0.1"
+      - "openerp.com:127.0.0.1"
+      - "odoo.com:127.0.0.1"
+      - "tinyerp.com:127.0.0.1"
+  postgres:
+    image: postgres:14.7-alpine
+    env_file: config/development/.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - ../postgres_data:/var/lib/postgresql/data

@@ -2,7 +2,6 @@
 
 pip install -r requirements.txt
 
-
 if [ -v REMOTE_DEBUG ]; then
     export PATH="${PATH}:/var/lib/odoo/.local/bin"
     pip install "${REMOTE_DEBUG}"

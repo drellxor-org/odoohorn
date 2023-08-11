@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tree_feedback" model="ir.ui.view">
+        <field name="name">article.tree</field>
+        <field name="model">feedback</field>
+        <field name="arch" type="xml">
+            <tree string="Feedback">
+                <field name="write_date"/>
+                <field name="name"/>
+                <field name="email"/>
+                <field name="phone"/>
+                <field name="text"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="form_feedback" model="ir.ui.view">
+        <field name="name">feedback.form</field>
+        <field name="model">feedback</field>
+        <field name="arch" type="xml">
+            <form string="Feedback">
+                <group>
+                    <field name="write_date"/>
+                    <field name="name"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="text"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="feedback_search_view" model="ir.ui.view">
+        <field name="name">feedback.search</field>
+        <field name="model">feedback</field>
+        <field name="arch" type="xml">
+            <search string="Feedback">
+                <field name="name"/>
+                <field name="email"/>
+                <field name="phone"/>
+                <field name="text"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="feedback_action" model="ir.actions.act_window">
+        <field name="name">Feedback</field>
+        <field name="res_model">feedback</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="feedback.feedback_search_view"/>
+        <field name="context">{'tree_view_ref':'feedback.tree_feedback', 'form_view_ref':'feedback.form_feedback'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Nothing here yet
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_ecommerce_etc_feedback" name="Feedback" parent="article.menu_ecommerce_etc" action="feedback.feedback_action"/>
+
+</odoo>

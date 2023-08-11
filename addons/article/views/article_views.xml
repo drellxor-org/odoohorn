@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tree_article" model="ir.ui.view">
+        <field name="name">article.tree</field>
+        <field name="model">article</field>
+        <field name="arch" type="xml">
+            <tree string="Article">
+                <field name="sequence" widget="handle"/>
+                <field name="image_1920" widget="image" options="{'preview_image': 'image_32'}"/>
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="form_article" model="ir.ui.view">
+        <field name="name">article.form</field>
+        <field name="model">article</field>
+        <field name="arch" type="xml">
+            <form string="Article">
+                <group>
+                    <field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'image_128'}"/>
+                    <field name="name"/>
+                    <field name="body"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="article_search_view" model="ir.ui.view">
+        <field name="name">article.search</field>
+        <field name="model">article</field>
+        <field name="arch" type="xml">
+            <search string="Article">
+                <field name="name"/>
+                <field name="body"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="article_action" model="ir.actions.act_window">
+        <field name="name">Articles</field>
+        <field name="res_model">article</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="article_search_view"/>
+        <field name="context">{'tree_view_ref':'article.tree_article', 'form_view_ref':'article.form_article'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new article
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_ecommerce_etc" name="Etc" parent="website_sale.menu_ecommerce" sequence="50"/>
+    <menuitem id="menu_ecommerce_etc_article" name="Articles" parent="menu_ecommerce_etc" action="article.article_action"/>
+
+
+</odoo>

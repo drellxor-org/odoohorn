@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+     <record model="ir.ui.view" id="product_template_form_view_procurement_button">
+            <field name="name">product.template_procurement</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="simplify_odoo.product_template_form_view_procurement_button"/>
+            <field name="priority" eval="15"/>
+            <field name="arch" type="xml">
+                <data>
+                    <xpath expr="//group[@name='displayed_group']" position="after">
+                        <field name="product_attachment_ids"
+                            context="{
+                                'tree_view_ref': 'product_attachment.tree_product_attachment',
+                                'form_view_ref': 'product_attachment.form_product_attachment'
+                            }"
+                        />
+                    </xpath>
+                </data>
+            </field>
+        </record>
+</odoo>

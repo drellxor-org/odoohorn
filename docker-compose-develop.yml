@@ -13,6 +13,7 @@ services:
     volumes:
       - ./addons:/mnt/extra-addons
       - ./config/development/odoo.conf:/etc/odoo/odoo.conf
+      - ../odoo_data:/var/lib/odoo/.local/share/Odoo
     extra_hosts:
       - "services.openerp.com:127.0.0.1"
       - "openerp.com:127.0.0.1"

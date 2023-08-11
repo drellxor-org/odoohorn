@@ -3,6 +3,9 @@ FROM odoo:16 as builder
 COPY ./requirements.txt /
 RUN pip install -r requirements.txt
 
+USER root
+RUN chown -R odoo /usr/lib/python3/dist-packages/odoo
+
 FROM builder as runner
 
 ARG RUNNING_ENV

@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+feedback_user,access_feedback_user,model_feedback,base.group_user,1,0,0,0
+feedback_manager,access_feedback_manager,model_feedback,base.group_system,1,1,1,1

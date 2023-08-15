@@ -1,4 +1,8 @@
+import logging
 from odoo import api, fields, models
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Feedback(models.Model):
@@ -16,7 +20,10 @@ class Feedback(models.Model):
         record = super(Feedback, self).create(vals_list)
 
         email_template = self.env['mail.template'].search([('name', '=', 'Feedback')])
-        email_template.send_mail(record.id, force_send=True)
+        if email_template:
+            email_template.send_mail(record.id, force_send=True)
+        else:
+            _logger.error('No feedback template initialized, no mail sent')
 
         return record
 

@@ -22,6 +22,11 @@
         'crm',
         'theme_default',
         'payment_adyen_vsf',
+        'article',
+        'feedback',
+        'order_product_info',
+        'page_message',
+        'product_attachment'
     ],
     'data': [
         'security/ir.model.access.csv',

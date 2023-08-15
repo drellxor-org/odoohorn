@@ -887,3 +887,26 @@ class WebsiteMenuImage(OdooObjectType):
 
     def resolve_image(self, info):
         return '/web/image/website.menu.image/{}/image'.format(self.id)
+
+
+class Article(OdooObjectType):
+    id = graphene.Int(required=True)
+    name = graphene.String()
+    body = graphene.String()
+    sequence = graphene.Int()
+    image = graphene.String()
+    small_image = graphene.String()
+    thumbnail = graphene.String()
+    icon = graphene.String()
+
+    def resolve_image(self, info):
+        return '/web/image/{}/{}/image_1920'.format(self._name, self.id)
+
+    def resolve_small_image(self, info):
+        return '/web/image/{}/{}/image_128'.format(self._name, self.id)
+
+    def resolve_thumbnail(self, info):
+        return '/web/image/{}/{}/image_512'.format(self._name, self.id)
+
+    def resolve_icon(self, info):
+        return '/web/image/{}/{}/image_32'.format(self._name, self.id)

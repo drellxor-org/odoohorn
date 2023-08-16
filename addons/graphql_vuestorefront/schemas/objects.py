@@ -389,6 +389,7 @@ class Product(OdooObjectType):
     product_variants = graphene.List(graphene.NonNull(lambda: Product), description='Specific to Product Template')
     first_variant = graphene.Field((lambda: Product), description='Specific to use in Product Template')
     json_ld = generic.GenericScalar()
+    popularity = graphene.Int()
 
     def resolve_type_id(self, info):
         if self.detailed_type == 'product':

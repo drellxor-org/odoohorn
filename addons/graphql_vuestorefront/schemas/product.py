@@ -158,6 +158,7 @@ class ProductSortInput(graphene.InputObjectType):
     id = SortEnum()
     name = SortEnum()
     price = SortEnum()
+    popularity = SortEnum()
 
 
 class ProductVariant(graphene.Interface):

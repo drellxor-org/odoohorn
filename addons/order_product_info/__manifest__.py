@@ -8,6 +8,7 @@
         'simplify_odoo'
     ],
     'data': [
+        'data/mail_template_data.xml',
         'views/sale_order_views.xml',
         'views/product_views.xml'
     ],

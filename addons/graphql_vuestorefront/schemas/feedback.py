@@ -13,13 +13,15 @@ class SendFeedback(graphene.Mutation):
     @staticmethod
     def mutate(self, info, name, email, phone, text):
         env = info.context['env']
+        website = env['website'].get_current_website()
         feedback_model = env['feedback'].sudo()
 
         feedback_model.create({
             'name': name,
             'email': email,
             'phone': phone,
-            'text': text
+            'text': text,
+            'website': website.id
         })
 
         return SendFeedback(response_message='OK')

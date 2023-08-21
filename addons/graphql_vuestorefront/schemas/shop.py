@@ -40,18 +40,21 @@ class CartAddItem(graphene.Mutation):
     class Arguments:
         product_id = graphene.Int(required=True)
         quantity = graphene.Int(required=True)
+        machine_serial = graphene.String()
+        part_number = graphene.String()
+        commentary = graphene.String()
 
     Output = CartData
 
     @staticmethod
-    def mutate(self, info, product_id, quantity):
+    def mutate(self, info, product_id, quantity, machine_serial, part_number, commentary):
         env = info.context["env"]
         website = env['website'].get_current_website()
         request.website = website
         order = website.sale_get_order(force_create=1)
         # Forcing the website_id to be passed to the Order
         order.write({'website_id': website.id})
-        order._cart_update(product_id=product_id, add_qty=quantity)
+        order._cart_update(product_id=product_id, add_qty=quantity, machine_serial=machine_serial, part_number=part_number, commentary=commentary)
         return CartData(order=order)
 
 
@@ -59,11 +62,14 @@ class CartUpdateItem(graphene.Mutation):
     class Arguments:
         line_id = graphene.Int(required=True)
         quantity = graphene.Int(required=True)
+        machine_serial = graphene.String()
+        part_number = graphene.String()
+        commentary = graphene.String()
 
     Output = CartData
 
     @staticmethod
-    def mutate(self, info, line_id, quantity):
+    def mutate(self, info, line_id, quantity, machine_serial, part_number, commentary):
         env = info.context["env"]
         website = env['website'].get_current_website()
         request.website = website
@@ -71,7 +77,7 @@ class CartUpdateItem(graphene.Mutation):
         line = order.order_line.filtered(lambda rec: rec.id == line_id)
         # Reset Warning Stock Message always before a new update
         line.shop_warning = ""
-        order._cart_update(product_id=line.product_id.id, line_id=line.id, set_qty=quantity)
+        order._cart_update(product_id=line.product_id.id, line_id=line.id, set_qty=quantity, machine_serial=machine_serial, part_number=part_number, commentary=commentary)
         return CartData(order=order)
 
 
@@ -130,11 +136,17 @@ class SetShippingMethod(graphene.Mutation):
 class ProductInput(graphene.InputObjectType):
     id = graphene.Int(required=True)
     quantity = graphene.Int(required=True)
+    machine_serial = graphene.String()
+    part_number = graphene.String()
+    commentary = graphene.String()
 
 
 class CartLineInput(graphene.InputObjectType):
     id = graphene.Int(required=True)
     quantity = graphene.Int(required=True)
+    machine_serial = graphene.String()
+    part_number = graphene.String()
+    commentary = graphene.String()
 
 
 class CartAddMultipleItems(graphene.Mutation):
@@ -154,7 +166,10 @@ class CartAddMultipleItems(graphene.Mutation):
         for product in products:
             product_id = product['id']
             quantity = product['quantity']
-            order._cart_update(product_id=product_id, add_qty=quantity)
+            machine_serial = product['machine_serial']
+            part_number = product['part_number']
+            commentary = product['commentary']
+            order._cart_update(product_id=product_id, add_qty=quantity, machine_serial=machine_serial, part_number=part_number, commentary=commentary)
         return CartData(order=order)
 
 
@@ -173,10 +188,13 @@ class CartUpdateMultipleItems(graphene.Mutation):
         for line in lines:
             line_id = line['id']
             quantity = line['quantity']
+            machine_serial = line['machine_serial']
+            part_number = line['part_number']
+            commentary = line['commentary']
             line = order.order_line.filtered(lambda rec: rec.id == line_id)
             # Reset Warning Stock Message always before a new update
             line.shop_warning = ""
-            order._cart_update(product_id=line.product_id.id, line_id=line.id, set_qty=quantity)
+            order._cart_update(product_id=line.product_id.id, line_id=line.id, set_qty=quantity, machine_serial=machine_serial, part_number=part_number, commentary=commentary)
         return CartData(order=order)
 
 
@@ -202,12 +220,13 @@ class CreateUpdatePartner(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         email = graphene.String(required=True)
-        subscribe_newsletter = graphene.Boolean(required=True)
+        phone = graphene.String()
+        comment = graphene.String()
 
     Output = Partner
 
     @staticmethod
-    def mutate(self, info, name, email, subscribe_newsletter):
+    def mutate(self, info, name, email, phone, comment):
         env = info.context['env']
         website = env['website'].get_current_website()
         request.website = website
@@ -216,6 +235,8 @@ class CreateUpdatePartner(graphene.Mutation):
         data = {
             'name': name,
             'email': email,
+            'phone': phone,
+            'comment': comment
         }
 
         partner = order.partner_id
@@ -231,11 +252,6 @@ class CreateUpdatePartner(graphene.Mutation):
             })
         else:
             partner.write(data)
-
-        # Subscribe to newsletter
-        if subscribe_newsletter:
-            if website.vsf_mailing_list_id:
-                MassMailController().subscribe(website.vsf_mailing_list_id.id, email, 'email')
 
         return partner
 

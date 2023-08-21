@@ -16,6 +16,6 @@ echo "MODULES_TO_UPDATE=${MODULES_TO_UPDATE}"
 echo "MODULES_TO_UNINSTALL=${MODULES_TO_UNINSTALL}"
 echo "POSTGRES_DB=${POSTGRES_DB}"
 
-exec odoo --database=${POSTGRES_DB} --init=${MODULES_TO_INIT} --update=${MODULES_TO_UPDATE}
+exec odoo --database=${POSTGRES_DB} --init=${MODULES_TO_INIT} --update=${MODULES_TO_UPDATE} --without-demo=all
 
 exit 1

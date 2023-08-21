@@ -107,7 +107,7 @@ class PaymentQuery(graphene.ObjectType):
         raise GraphQLError(_('Cart does not exist'))
 
 
-class MakeGiftCardPayment(graphene.Mutation):
+class confirmPayment(graphene.Mutation):
     done = graphene.Boolean()
 
     @staticmethod
@@ -120,13 +120,13 @@ class MakeGiftCardPayment(graphene.Mutation):
 
         if order and not order.amount_total and not tx:
             order.with_context(send_email=True).action_confirm()
-            return MakeGiftCardPayment(done=True)
+            return confirmPayment(done=True)
 
-        return MakeGiftCardPayment(done=False)
+        return confirmPayment(done=False)
 
 
 class PaymentMutation(graphene.ObjectType):
-    make_gift_card_payment = MakeGiftCardPayment.Field(description='Pay the order only with gift card.')
+    confirm_order = confirmPayment.Field(description='Confirm Order')
 
 
 # -------------------------------- #

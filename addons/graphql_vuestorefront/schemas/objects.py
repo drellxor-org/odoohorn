@@ -256,6 +256,7 @@ class Category(OdooObjectType):
     slug = graphene.String()
     products = graphene.List(graphene.NonNull(lambda: Product))
     json_ld = generic.GenericScalar()
+    page_message = graphene.String()
 
     def resolve_parent(self, info):
         return self.parent_id or None
@@ -390,6 +391,8 @@ class Product(OdooObjectType):
     first_variant = graphene.Field((lambda: Product), description='Specific to use in Product Template')
     json_ld = generic.GenericScalar()
     popularity = graphene.Int()
+    page_message = graphene.String()
+    attachments = graphene.List(graphene.String)
 
     def resolve_type_id(self, info):
         if self.detailed_type == 'product':
@@ -532,6 +535,9 @@ class Product(OdooObjectType):
     def resolve_json_ld(self, info):
         return self and self.get_json_ld() or None
 
+    def resolve_attachments(self, info):
+        return [f'/web/content/product.attachment/{a.id}/attachment/{a.filename}' for a in self.product_attachment_ids]
+
 
 class Payment(OdooObjectType):
     id = graphene.Int()
@@ -580,6 +586,9 @@ class OrderLine(OdooObjectType):
     shop_warning = graphene.String()
     gift_card = graphene.Field(lambda: GiftCard)
     coupon = graphene.Field(lambda: Coupon)
+    machine_serial = graphene.String()
+    part_number = graphene.String()
+    commentary = graphene.String()
 
     def resolve_product(self, info):
         return self.product_id or None

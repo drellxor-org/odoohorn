@@ -9,42 +9,44 @@ from odoo.addons.graphql_vuestorefront.schemas import (
     article, country, category, product, order,
     invoice, contact_us, user_profile, sign,
     address, wishlist, shop, payment,
-    mailing_list, website, feedback
+    mailing_list, website, feedback, language, about
 )
 
 
 class Query(
     OdooObjectType,
     article.ArticleQuery,
-    country.CountryQuery,
+    # country.CountryQuery,
     category.CategoryQuery,
     product.ProductQuery,
-    order.OrderQuery,
-    invoice.InvoiceQuery,
-    user_profile.UserProfileQuery,
-    address.AddressQuery,
-    wishlist.WishlistQuery,
+    # order.OrderQuery,
+    # invoice.InvoiceQuery,
+    # user_profile.UserProfileQuery,
+    # address.AddressQuery,
+    # wishlist.WishlistQuery,
     shop.ShoppingCartQuery,
-    payment.PaymentQuery,
-    mailing_list.MailingContactQuery,
-    mailing_list.MailingListQuery,
-    website.WebsiteQuery,
+    # payment.PaymentQuery,
+    # mailing_list.MailingContactQuery,
+    # mailing_list.MailingListQuery,
+    # website.WebsiteQuery,
+    language.LanguageQuery,
+    about.AboutQuery
 ):
     pass
 
 
 class Mutation(
     OdooObjectType,
-    contact_us.ContactUsMutation,
-    user_profile.UserProfileMutation,
-    sign.SignMutation,
-    address.AddressMutation,
-    wishlist.WishlistMutation,
+    # contact_us.ContactUsMutation,
+    # user_profile.UserProfileMutation,
+    # sign.SignMutation,
+    # address.AddressMutation,
+    # wishlist.WishlistMutation,
     shop.ShopMutation,
     payment.PaymentMutation,
-    payment.AdyenPaymentMutation,
-    mailing_list.NewsletterSubscribeMutation,
-    order.OrderMutation,
+    # payment.AdyenPaymentMutation,
+    # mailing_list.NewsletterSubscribeMutation,
+    # order.OrderMutation,
     feedback.FeedbackMutation
 ):
     pass

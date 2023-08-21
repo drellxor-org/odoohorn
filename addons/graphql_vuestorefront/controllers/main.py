@@ -92,15 +92,17 @@ class GraphQLController(http.Controller, GraphQLControllerMixin):
     def _set_website_context(self):
         """Set website context based on http_request_host header."""
         try:
-            request_host = request.httprequest.headers.environ['HTTP_REQUEST_HOST']
+            request_host = request.httprequest.headers.environ.get('HTTP_REQUEST_HOST')
             website = request.env['website'].search([('domain', 'ilike', request_host)], limit=1)
             if website:
+                preferred_lang = request.httprequest.cookies.get('frontend_lang')
+
                 context = dict(request.context)
                 context.update({
                     'website_id': website.id,
-                    'lang': website.default_lang_id.code,
+                    'lang': preferred_lang or website.default_lang_id.code,
                 })
-                request.context = context
+                request.env.context = context
 
                 request_uid = http.request.env.uid
                 website_uid = website.sudo().user_id.id

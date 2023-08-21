@@ -1,7 +1,5 @@
 import graphene
 
-from odoo.http import request
-
 from odoo.addons.graphql_vuestorefront.schemas.objects import (
     Article
 )

@@ -10,7 +10,7 @@
     ],
     'data': [
         'security/ir.model.access.csv',
-
+        'data/mail_template_data.xml',
         'views/feedback_views.xml'
     ],
     'installable': True,

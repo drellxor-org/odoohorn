@@ -1,6 +1,7 @@
 import logging
 from odoo import api, SUPERUSER_ID
 
+from . import models
 
 _logger = logging.getLogger(__name__)
 

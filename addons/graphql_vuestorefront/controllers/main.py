@@ -122,7 +122,7 @@ class GraphQLController(http.Controller, GraphQLControllerMixin):
     # The graphql route, for applications.
     # Note csrf=False: you may want to apply extra security
     # (such as origin restrictions) to this route.
-    @http.route("/graphql/vsf", auth="public", csrf=False)
+    @http.route("/graphql/vsf", auth="public", csrf=False, cors='*')
     def graphql(self, **kwargs):
         self._set_website_context()
         return self._handle_graphql_request(schema.graphql_schema)

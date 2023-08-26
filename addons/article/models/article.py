@@ -4,7 +4,7 @@ from odoo import fields, models
 class Article(models.Model):
     _name = 'article'
     _description = 'Articles'
-    _inherit = ['image.mixin']
+    _inherit = ['image.mixin', 'website.published.mixin']
     _order = "sequence, name"
 
     name = fields.Char('Title', required=True, translate=True)
@@ -12,3 +12,6 @@ class Article(models.Model):
     sequence = fields.Integer('Sequence')
 
     image_32 = fields.Image("Image 32", related="image_1920", max_width=32, max_height=32, store=True)
+
+    def _default_is_published(self):
+        return True

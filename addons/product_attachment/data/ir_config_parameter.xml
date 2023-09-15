@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="max_file_upload_size" model="ir.config_parameter">
+        <field name="key">web.max_file_upload_size</field>
+        <field name="value">314572800</field>
+    </record>
+</odoo>

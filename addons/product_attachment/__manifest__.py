@@ -10,6 +10,8 @@
     'data': [
         'security/ir.model.access.csv',
 
+        'data/ir_config_parameter.xml',
+
         'views/product_attachment.xml',
         'views/product_views.xml',
     ],

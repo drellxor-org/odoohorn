@@ -261,6 +261,7 @@ class Category(OdooObjectType):
     small_image = graphene.String()
     image_filename = graphene.String()
     thumbnail = graphene.String()
+    seo_metadata = generic.GenericScalar()
 
 
     def resolve_image(self, info):
@@ -289,6 +290,9 @@ class Category(OdooObjectType):
 
     def resolve_json_ld(self, info):
         return self and self.get_json_ld() or None
+
+    def resolve_seo_metadata(self, info):
+        return self.get_website_meta() or None
 
 
 class AttributeValue(OdooObjectType):
@@ -410,6 +414,7 @@ class Product(OdooObjectType):
     popularity = graphene.Int()
     page_message = graphene.String()
     attachments = graphene.List(graphene.String)
+    seo_metadata = generic.GenericScalar()
 
     def resolve_type_id(self, info):
         if self.detailed_type == 'product':
@@ -554,6 +559,9 @@ class Product(OdooObjectType):
 
     def resolve_attachments(self, info):
         return [f'/web/content/product.attachment/{a.id}/attachment/{a.filename}' for a in self.product_attachment_ids]
+
+    def resolve_seo_metadata(self, info):
+        return self.get_website_meta() or None
 
 
 class Payment(OdooObjectType):

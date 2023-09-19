@@ -7,7 +7,7 @@ import graphene
 from odoo.addons.graphql_vuestorefront.schemas.objects import (
     SortEnum, Category
 )
-
+from odoo.http import request
 
 def get_search_order(sort):
     sorting = ''
@@ -63,6 +63,9 @@ class CategoryQuery(graphene.ObjectType):
 
         domain = env['website'].get_current_website().website_domain()
 
+        website = env['website'].get_current_website()
+        request.website = website
+
         if id:
             domain += [('id', '=', id)]
             category = Category.search(domain, limit=1)
@@ -79,6 +82,9 @@ class CategoryQuery(graphene.ObjectType):
         env = info.context["env"]
         order = get_search_order(sort)
         domain = env['website'].get_current_website().website_domain()
+
+        website = env['website'].get_current_website()
+        request.website = website
 
         if search:
             for srch in search.split(" "):

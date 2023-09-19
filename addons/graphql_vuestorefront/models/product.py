@@ -208,34 +208,9 @@ class ProductProduct(models.Model):
 class ProductPublicCategory(models.Model):
     _inherit = 'product.public.category'
 
-    def _validate_website_slug(self):
-        for category in self.filtered(lambda c: c.website_slug):
-            if category.website_slug[0] != '/':
-                raise ValidationError(_('Slug should start with /'))
-
-            if self.search([('website_slug', '=', category.website_slug), ('id', '!=', category.id)], limit=1):
-                raise ValidationError(_('Slug is already in use: {}'.format(category.website_slug)))
-
-    website_slug = fields.Char('Website Slug', translate=True, copy=False)
+    website_slug = fields.Char('Website Slug', compute='_compute_website_slug', store=True, readonly=True,
+                               translate=True)
     json_ld = fields.Char('JSON-LD')
-
-    @api.model
-    def create(self, vals):
-        rec = super(ProductPublicCategory, self).create(vals)
-
-        if rec.website_slug:
-            rec._validate_website_slug()
-        else:
-            rec.website_slug = '/category/{}'.format(rec.id)
-
-        return rec
-
-    def write(self, vals):
-        res = super(ProductPublicCategory, self).write(vals)
-        if vals.get('website_slug', False):
-            self._validate_website_slug()
-        self.env['invalidate.cache'].create_invalidate_cache(self._name, self.ids)
-        return res
 
     def unlink(self):
         self.env['invalidate.cache'].create_invalidate_cache(self._name, self.ids)
@@ -259,3 +234,34 @@ class ProductPublicCategory(models.Model):
         }
 
         return json.dumps(json_ld)
+
+    @api.depends('name')
+    def _compute_website_slug(self):
+        langs = self.env['res.lang'].search([])
+
+        for category in self:
+            for lang in langs:
+                category = category.with_context(lang=lang.code)
+
+                if not category.id:
+                    category.website_slug = None
+                else:
+                    self._slugify_children()
+
+    def _slugify_category(self):
+        slug_list = []
+        parent_id = self.parent_id
+        while parent_id:
+            current_slug = slugify(f"{self.name or ''}-{self.id}").strip().strip('-')
+            slug_list.insert(0, current_slug)
+            parent_id = parent_id.parent_id
+        current_slug = slugify(f"{self.name or ''}-{self.id}").strip().strip('-')
+        slug_list.append(current_slug)
+        return slug_list
+
+    def _slugify_children(self):
+        for child in self.child_id:
+            child._slugify_children()
+        slug_list = self._slugify_category()
+        prefix = '/category'
+        self.website_slug = f'{prefix}/{"/".join(slug_list)}'

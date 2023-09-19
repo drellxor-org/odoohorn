@@ -209,6 +209,9 @@ class ProductQuery(graphene.ObjectType):
         env = info.context["env"]
         Product = env["product.template"].sudo()
 
+        website = env['website'].get_current_website()
+        request.website = website
+
         if id:
             product = Product.search([('id', '=', id)], limit=1)
         elif slug:
@@ -229,6 +232,10 @@ class ProductQuery(graphene.ObjectType):
     @staticmethod
     def resolve_products(self, info, filter, current_page, page_size, search, sort):
         env = info.context["env"]
+
+        website = env['website'].get_current_website()
+        request.website = website
+
         products, total_count, attribute_values,min_price, max_price = get_product_list(
             env, current_page, page_size, search, sort, **filter)
         return ProductList(products=products, total_count=total_count, attribute_values=attribute_values,

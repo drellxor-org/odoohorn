@@ -933,6 +933,7 @@ class Article(OdooObjectType):
     small_image = graphene.String()
     thumbnail = graphene.String()
     icon = graphene.String()
+    slug = graphene.String()
     seo_metadata = generic.GenericScalar()
 
     def resolve_image(self, info):
@@ -946,6 +947,9 @@ class Article(OdooObjectType):
 
     def resolve_icon(self, info):
         return '/web/image/{}/{}/image_32'.format(self._name, self.id)
+
+    def resolve_slug(self, info):
+        return self.website_slug or None
 
     def resolve_seo_metadata(self, info):
         return self.get_website_meta() or None

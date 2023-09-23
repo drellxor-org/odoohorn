@@ -1,5 +1,7 @@
 import graphene
+from graphql import GraphQLError
 
+from odoo.http import request
 from odoo.addons.graphql_vuestorefront.schemas.objects import (
     Article
 )
@@ -31,6 +33,7 @@ class ArticleQuery(graphene.ObjectType):
     article = graphene.Field(
         Article,
         id=graphene.Int(default_value=None),
+        slug=graphene.String()
     )
 
     articles = graphene.Field(
@@ -40,20 +43,32 @@ class ArticleQuery(graphene.ObjectType):
     )
 
     @staticmethod
-    def resolve_article(self, info, id=None):
+    def resolve_article(self, info, id=None, slug=None):
         env = info.context['env']
+
+        website = env['website'].get_current_website()
+        request.website = website
+
         article_model = env['article'].sudo()
 
         if id:
             article = article_model.search([('id', '=', id)], limit=1)
+        elif slug:
+            article = article_model.search([('website_slug', '=', slug)], limit=1)
         else:
             article = article_model
+        if not article:
+            raise GraphQLError('Article not found')
 
         return article
 
     @staticmethod
     def resolve_articles(self, info, current_page, page_size):
         env = info.context["env"]
+
+        website = env['website'].get_current_website()
+        request.website = website
+
         articles, total_count = get_article_list(
             env, current_page, page_size)
         return Articles(articles=articles, total_count=total_count)

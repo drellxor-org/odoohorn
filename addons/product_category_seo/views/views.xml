@@ -32,5 +32,21 @@
         </field>
     </record>
 
+    <record model="ir.ui.view" id="form_article">
+        <field name="name">article.form</field>
+        <field name="model">article</field>
+        <field name="inherit_id" ref="article.form_article"/>
+        <field name="arch" type="xml">
+            <data>
+                <xpath expr="//field[@name='body']" position="after">
+                    <field name="website_meta_title"></field>
+                    <field name="website_meta_description"></field>
+                    <field name="website_meta_keywords"></field>
+                    <field name="website_meta_og_img"></field>
+                </xpath>
+            </data>
+        </field>
+    </record>
+
 </odoo>
 

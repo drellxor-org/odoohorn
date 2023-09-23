@@ -34,6 +34,7 @@
         'data/mail_template.xml',
         'data/ir_config_parameter_data.xml',
         'data/ir_cron_data.xml',
+        'data/product_public_category_data.xml',
         'views/product_views.xml',
         'views/website_views.xml',
         'views/res_config_settings_views.xml',

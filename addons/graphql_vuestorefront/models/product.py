@@ -252,7 +252,7 @@ class ProductPublicCategory(models.Model):
         slug_list = []
         parent_id = self.parent_id
         while parent_id:
-            current_slug = slugify(f"{self.name or ''}-{self.id}").strip().strip('-')
+            current_slug = slugify(f"{parent_id.name or ''}-{parent_id.id}").strip().strip('-')
             slug_list.insert(0, current_slug)
             parent_id = parent_id.parent_id
         current_slug = slugify(f"{self.name or ''}-{self.id}").strip().strip('-')
@@ -265,3 +265,12 @@ class ProductPublicCategory(models.Model):
         slug_list = self._slugify_category()
         prefix = '/category'
         self.website_slug = f'{prefix}/{"/".join(slug_list)}'
+
+    @api.model
+    def calculate_slugs(self):
+        categories = self.env['product.public.category'].search([])
+
+        prefix = '/category'
+        for category in categories:
+            slug_list = category._slugify_category()
+            category.website_slug = f'{prefix}/{"/".join(slug_list)}'

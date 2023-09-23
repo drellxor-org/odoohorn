@@ -5,10 +5,11 @@
     'category': 'Sales/Sales',
     'author': 'drellxor',
     'depends': [
-        'simplify_odoo'
+        'simplify_odoo',
+        'article'
     ],
     'data': [
-        'views/product_views.xml'
+        'views/views.xml'
     ],
     'installable': True,
     'auto_install': False

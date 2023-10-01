@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <tree string="Article">
                 <field name="sequence" widget="handle"/>
-                <field name="image_1920" widget="image" options="{'preview_image': 'image_32'}"/>
+                <field name="image_32" widget="image" options="{'preview_image': 'image_32'}"/>
                 <field name="name"/>
             </tree>
         </field>

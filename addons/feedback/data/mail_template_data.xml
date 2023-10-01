@@ -5,45 +5,59 @@
             <field name="name">Feedback: Feedback confirmation</field>
             <field name="model_id" ref="feedback.model_feedback"/>
             <field name="subject">{{ object.name }} Request </field>
-            <field name="email_from">{{ object.website.company_id.email }} </field>
+            <field name="email_from">"{{ object.website.company_id.name }}" &lt;noreply@silverhorn.co.uk&gt;</field>
             <field name="email_to">{{ object.email }}</field>
             <field name="description">Sent to confirm request</field>
             <field name="body_html" type="html">
-<div style="margin: 0px; padding: 0px;">
-    <p style="margin: 0px; padding: 0px; font-size: 12px;">
-        Hello,
-        <br/><br/>
-        We received your request.
-        We will contact you as soon as possible.
-        Thank you for your trust!
-        <br/><br/>
-    </p>
-</div></field>
+                <html>
+                    <body>
+                        <tbody>
+                            <div style="margin: 0px; padding: 0px;">
+                                <p style="margin: 0px; padding: 0px; font-size: 12px;">
+                                    Hello, <t t-out="object.name"></t>
+                                    <br/><br/>
+                                    We received your request.
+                                    We will contact you as soon as possible.
+                                    Thank you for your trust!
+                                    <br/><br/>
+                                </p>
+                            </div>
+                        </tbody>
+                    </body>
+                </html>
+            </field>
             <field name="report_template"/>
             <field name="report_name">{{ (object.name or '').replace('/','_') }}</field>
             <field name="auto_delete" eval="True"/>
         </record>
 
 
-         <record id="mail_feedback_to_company" model="mail.template">
+        <record id="mail_feedback_to_company" model="mail.template">
             <field name="name">Feedback: Feedback send to company mail</field>
             <field name="model_id" ref="feedback.model_feedback"/>
             <field name="subject">{{ object.name }} Request </field>
-            <field name="email_from">{{ object.website.company_id.email }} </field>
+            <field name="email_from">"{{ object.website.company_id.name }}" &lt;noreply@silverhorn.co.uk&gt;</field>
             <field name="email_to">{{ object.website.company_id.email }}</field>
             <field name="description">Sent to company email</field>
             <field name="body_html" type="html">
-<div style="margin: 0px; padding: 0px;">
-    <p style="margin: 0px; padding: 0px; font-size: 12px;">
-        Name: <t t-out="object.name"></t>
-        <br/><br/>
-        Email: <t t-out="object.email"></t>
-        <br/><br/>
-        Phone: <t t-out="object.phone"></t>
-        <br/><br/>
-        Text: <t t-out="object.text"></t>
-    </p>
-</div></field>
+                <html>
+                    <body>
+                        <tbody>
+                            <div style="margin: 0px; padding: 0px;">
+                                <p style="margin: 0px; padding: 0px; font-size: 12px;">
+                                    Name: <t t-out="object.name"></t>
+                                    <br/><br/>
+                                    Email: <t t-out="object.email"></t>
+                                    <br/><br/>
+                                    Phone: <t t-out="object.phone"></t>
+                                    <br/><br/>
+                                    Text: <t t-out="object.text"></t>
+                                </p>
+                            </div>
+                        </tbody>
+                    </body>
+                </html>
+            </field>
             <field name="report_template"/>
             <field name="report_name">{{ (object.name or '').replace('/','_') }}</field>
             <field name="auto_delete" eval="True"/>

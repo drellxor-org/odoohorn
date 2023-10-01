@@ -14,7 +14,7 @@ class Article(models.Model):
 
     image_32 = fields.Image("Image 32", related="image_1920", max_width=32, max_height=32, store=True)
 
-    website_slug = fields.Char('Website slug', readonly=True, compute='_compute_website_slug')
+    website_slug = fields.Char('Website slug', readonly=True, compute='_compute_website_slug', store=True)
 
     def _default_is_published(self):
         return True

@@ -6,9 +6,11 @@
     'author': 'drellxor',
     'depends': [
         'simplify_odoo',
-        'article'
+        'article',
+        'website_sale'
     ],
     'data': [
+        'data/seo.xml',
         'views/views.xml'
     ],
     'installable': True,

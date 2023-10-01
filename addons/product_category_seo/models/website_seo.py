@@ -17,3 +17,10 @@ class SeoMetadata(models.AbstractModel):
         records = self.search([])
         for record in records:
             record.init_record_metadata()
+
+    @api.model
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for record in records:
+            record.init_record_metadata()
+        return records

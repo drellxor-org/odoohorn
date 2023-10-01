@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <function model="article" name="init_metadata"/>
+    <function model="product.public.category" name="init_metadata"/>
+    <function model="product.template" name="init_metadata"/>
 </odoo>

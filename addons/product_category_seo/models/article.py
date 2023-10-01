@@ -13,10 +13,3 @@ class Article(models.Model):
             self.website_meta_description = 'SilverHorn: Plant machinery spares and service, worldwide delivery'
         if not self.website_meta_keywords:
             self.website_meta_keywords = 'spares, service, plant, machinery, worldwide, order, delivery'
-
-    @api.model
-    def create(self, vals_list):
-        records = super(Article, self).create(vals_list)
-        for record in records:
-            record.init_record_metadata()
-        return records

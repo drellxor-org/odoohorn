@@ -13,7 +13,7 @@
     <p style="margin: 0px; padding: 0px; font-size: 12px;">
         Hello, <t t-out="object.partner_id.name"/>
         <br/><br/>
-        Your order <span style="font-weight:bold;" t-out="object.name or ''">S00049</span> has been confirmed.<br/>
+        Your enquiry <span style="font-weight:bold;" t-out="object.name or ''">S00049</span> has been confirmed.<br/>
         Thank you for your trust!
         <br/><br/>
         Do not hesitate to contact us if you have any questions.

@@ -1,12 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+
+    <record id="tree_article_image" model="ir.ui.view">
+        <field name="name">article.image.tree</field>
+        <field name="model">article.image</field>
+        <field name="arch" type="xml">
+            <tree string="Article Images" default_order="sequence">
+                <field name="sequence" widget="handle"/>
+                <field name="image_64" widget="image" options="{'preview_image': 'image_64'}"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="form_article_image" model="ir.ui.view">
+        <field name="name">article.image.form</field>
+        <field name="model">article.image</field>
+        <field name="arch" type="xml">
+            <form string="Article image">
+                <group>
+                    <field name="image_1920" widget="image"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="article_image_action" model="ir.actions.act_window">
+        <field name="name">Article Image</field>
+        <field name="res_model">article.image</field>
+        <field name="domain">[('article_id','=', active_id)]</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
     <record id="tree_article" model="ir.ui.view">
         <field name="name">article.tree</field>
         <field name="model">article</field>
         <field name="arch" type="xml">
             <tree string="Article">
                 <field name="sequence" widget="handle"/>
-                <field name="image_32" widget="image" options="{'preview_image': 'image_32'}"/>
+                <field name="image_64" widget="image" options="{'preview_image': 'image_64'}"/>
                 <field name="name"/>
             </tree>
         </field>
@@ -18,9 +49,9 @@
         <field name="arch" type="xml">
             <form string="Article">
                 <group>
-                    <field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'image_128'}"/>
                     <field name="name"/>
                     <field name="body"/>
+                    <field name="article_images"/>
                 </group>
             </form>
         </field>

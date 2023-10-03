@@ -924,6 +924,22 @@ class WebsiteMenuImage(OdooObjectType):
         return '/web/image/website.menu.image/{}/image'.format(self.id)
 
 
+class ArticleImage(OdooObjectType):
+    image = graphene.String()
+    small_image = graphene.String()
+    thumbnail = graphene.String()
+    icon = graphene.String()
+
+    def resolve_image(self, info):
+        return '/web/image/{}/{}/image_1920'.format(self._name, self.id)
+
+    def resolve_small_image(self, info):
+        return '/web/image/{}/{}/image_128'.format(self._name, self.id)
+
+    def resolve_thumbnail(self, info):
+        return '/web/image/{}/{}/image_512'.format(self._name, self.id)
+
+
 class Article(OdooObjectType):
     id = graphene.Int(required=True)
     name = graphene.String()
@@ -935,21 +951,28 @@ class Article(OdooObjectType):
     icon = graphene.String()
     slug = graphene.String()
     seo_metadata = generic.GenericScalar()
+    images = graphene.List(graphene.NonNull(lambda: ArticleImage))
 
     def resolve_image(self, info):
-        return '/web/image/{}/{}/image_1920'.format(self._name, self.id)
+        images = self.article_images.sorted(key=lambda x: x.sequence)
+        if images:
+            return f'/web/image/article.image/{images[0].id}/image_1920'
 
     def resolve_small_image(self, info):
-        return '/web/image/{}/{}/image_128'.format(self._name, self.id)
+        images = self.article_images.sorted(key=lambda x: x.sequence)
+        if images:
+            return f'/web/image/article.image/{images[0].id}/image_128'
 
     def resolve_thumbnail(self, info):
-        return '/web/image/{}/{}/image_512'.format(self._name, self.id)
-
-    def resolve_icon(self, info):
-        return '/web/image/{}/{}/image_32'.format(self._name, self.id)
+        images = self.article_images.sorted(key=lambda x: x.sequence)
+        if images:
+            return f'/web/image/article.image/{images[0].id}/image_512'
 
     def resolve_slug(self, info):
         return self.website_slug or None
 
     def resolve_seo_metadata(self, info):
         return self.get_website_meta() or None
+
+    def resolve_images(self, info):
+        return self.article_images.sorted(key=lambda x: x.sequence)

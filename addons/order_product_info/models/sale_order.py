@@ -7,7 +7,7 @@ class SaleOrder(models.Model):
     def _cart_update_order_line(self, product_id, quantity, order_line, **kwargs):
         order_line = super()._cart_update_order_line(product_id, quantity, order_line, **kwargs)
 
-        custom_fields = ['machine_serial', 'part_number', 'commentary']
+        custom_fields = ['commentary']
         write_data = {}
 
         for field in custom_fields:

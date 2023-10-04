@@ -6,6 +6,7 @@ import graphene
 from odoo.addons.graphql_vuestorefront.schemas.objects import Order, Partner
 from odoo.addons.website_mass_mailing.controllers.main import MassMailController
 from odoo.http import request
+from graphql import GraphQLError
 
 
 class Cart(graphene.Interface):
@@ -54,7 +55,21 @@ class CartAddItem(graphene.Mutation):
         order = website.sale_get_order(force_create=1)
         # Forcing the website_id to be passed to the Order
         order.write({'website_id': website.id})
-        order._cart_update(product_id=product_id, add_qty=quantity, machine_serial=machine_serial, part_number=part_number, commentary=commentary)
+
+        # Evaluate product
+        template = env['product.template'].browse(product_id)
+        if not template:
+            raise GraphQLError(f'Product {product_id} not found')
+        selling_product = env['product.template'].search([('parent_template', '=', product_id),
+                                                          ('part_number', '=', part_number),
+                                                          ('machine_serial', '=', machine_serial)])
+        if not selling_product:
+            selling_product = env['product.template'].sudo().create({'name': template.name,
+                                                                     'parent_template': template.id,
+                                                                     'part_number': part_number,
+                                                                     'machine_serial': machine_serial})
+
+        order._cart_update(product_id=selling_product.product_variant_ids[0].id, add_qty=quantity, commentary=commentary)
         return CartData(order=order)
 
 
@@ -77,7 +92,25 @@ class CartUpdateItem(graphene.Mutation):
         line = order.order_line.filtered(lambda rec: rec.id == line_id)
         # Reset Warning Stock Message always before a new update
         line.shop_warning = ""
-        order._cart_update(product_id=line.product_id.id, line_id=line.id, set_qty=quantity, machine_serial=machine_serial, part_number=part_number, commentary=commentary)
+
+        if line.machine_serial == machine_serial and line.part_number == part_number:
+            order._cart_update(product_id=line.product_id.id, line_id=line.id, set_qty=quantity, commentary=commentary)
+        else:
+            parent_template = line.product_id.product_tmpl_id.parent_template
+            # Evaluate product
+            template = env['product.template'].search([('parent_template', '=', parent_template.id),
+                                                       ('part_number', '=', part_number),
+                                                       ('machine_serial', '=', machine_serial)])
+            if template:
+                product_id = template.product_variant_ids[0].id
+            else:
+                new_product = env['product.template'].sudo().create({'name': parent_template.name,
+                                                                     'parent_template': parent_template.id,
+                                                                     'part_number': part_number,
+                                                                     'machine_serial': machine_serial})
+                product_id = new_product.product_variant_ids[0].id
+            line.unlink()
+            order._cart_update(product_id=product_id, add_qty=quantity, commentary=commentary)
         return CartData(order=order)
 
 

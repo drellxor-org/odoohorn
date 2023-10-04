@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo noupdate="1">
+    <record id="product_template_search_view" model="ir.ui.view">
+        <field name="name">product.template.search.view.inherit</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='filter_to_sell']" position="attributes">
+                <attribute name="domain">[('sale_ok','=',True), ('parent_template', '=', False)]</attribute>
+            </xpath>
+        </field>
+    </record>
+
     <record model="ir.ui.view" id="product_template_kanban_view">
         <field name="name">product.template.product.kanban</field>
         <field name="model">product.template</field>

@@ -20,6 +20,7 @@ class Article(models.Model):
     def _default_is_published(self):
         return True
 
+    @api.depends('name')
     def _compute_website_slug(self):
         for article in self:
             prefix = '/article'

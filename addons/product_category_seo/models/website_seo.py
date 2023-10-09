@@ -14,11 +14,12 @@ class SeoMetadata(models.AbstractModel):
 
     @api.model
     def init_metadata(self):
-        records = self.search([])
+        records = self.search(['|', ('website_meta_title', '=', False),
+                               '|', ('website_meta_description', '=', False), ('website_meta_keywords', '=', False)])
         for record in records:
             record.init_record_metadata()
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
         for record in records:

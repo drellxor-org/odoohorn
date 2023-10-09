@@ -3,3 +3,4 @@ article_user,access_article_user,model_article,base.group_user,1,0,0,0
 article_manager,access_article_manager,model_article,base.group_system,1,1,1,1
 article_image_user,access_article_image_user,model_article_image,base.group_user,1,0,0,0
 article_image_manager,access_article_image_manager,model_article_image,base.group_system,1,1,1,1
+article_image_public,access_article_image_public,model_article_image,base.group_public,1,0,0,0

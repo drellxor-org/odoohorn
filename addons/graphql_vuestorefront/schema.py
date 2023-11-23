@@ -9,7 +9,7 @@ from odoo.addons.graphql_vuestorefront.schemas import (
     article, country, category, product, order,
     invoice, contact_us, user_profile, sign,
     address, wishlist, shop, payment,
-    mailing_list, website, feedback, language, about
+    mailing_list, website, feedback, language, about, sitemap
 )
 
 
@@ -30,7 +30,8 @@ class Query(
     # mailing_list.MailingListQuery,
     # website.WebsiteQuery,
     language.LanguageQuery,
-    about.AboutQuery
+    about.AboutQuery,
+    sitemap.SitemapQuery
 ):
     pass
 

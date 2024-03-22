@@ -79,6 +79,7 @@ class ProductTemplate(models.Model):
                                                    store=True, readonly=True)
     website_slug = fields.Char('Website Slug', compute='_compute_website_slug', store=True, readonly=True,
                                translate=True)
+    website_slug_override = fields.Char('User-defined website Slug')
     public_categ_slug_ids = fields.Many2many('product.public.category',
                                              'product_template_product_public_category_slug_rel',
                                              compute='_compute_public_categ_slug_ids',
@@ -210,6 +211,7 @@ class ProductPublicCategory(models.Model):
 
     website_slug = fields.Char('Website Slug', compute='_compute_website_slug', store=True, readonly=True,
                                translate=True)
+    website_slug_override = fields.Char('User-defined website slug')
     json_ld = fields.Char('JSON-LD')
 
     def unlink(self):

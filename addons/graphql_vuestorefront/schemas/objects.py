@@ -283,7 +283,7 @@ class Category(OdooObjectType):
         return self.child_id or None
 
     def resolve_slug(self, info):
-        return self.website_slug
+        return self.website_slug_override or self.website_slug or None
 
     def resolve_products(self, info):
         return self.product_tmpl_ids or None
@@ -498,7 +498,7 @@ class Product(OdooObjectType):
         return self.free_qty
 
     def resolve_slug(self, info):
-        return self.website_slug
+        return self.website_slug_override or self.website_slug or None
 
     def resolve_alternative_products(self, info):
         return self.alternative_product_ids or None
@@ -952,6 +952,8 @@ class Article(OdooObjectType):
     slug = graphene.String()
     seo_metadata = generic.GenericScalar()
     images = graphene.List(graphene.NonNull(lambda: ArticleImage))
+    price = graphene.Float()
+    availability = graphene.String()
 
     def resolve_image(self, info):
         images = self.article_images.sorted(key=lambda x: x.sequence)
@@ -969,7 +971,7 @@ class Article(OdooObjectType):
             return f'/web/image/article.image/{images[0].id}/image_512'
 
     def resolve_slug(self, info):
-        return self.website_slug or None
+        return self.website_slug_override or self.website_slug or None
 
     def resolve_seo_metadata(self, info):
         return self.get_website_meta() or None

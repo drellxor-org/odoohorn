@@ -26,7 +26,8 @@
         'feedback',
         'order_product_info',
         'page_message',
-        'product_attachment'
+        'product_attachment',
+        'simplify_odoo'
     ],
     'data': [
         'security/ir.model.access.csv',

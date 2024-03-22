@@ -70,7 +70,7 @@ class CategoryQuery(graphene.ObjectType):
             domain += [('id', '=', id)]
             category = Category.search(domain, limit=1)
         elif slug:
-            domain += [('website_slug', '=', slug)]
+            domain += ['|', ('website_slug', '=', slug), ('website_slug_override', '=', slug)]
             category = Category.search(domain, limit=1)
         else:
             category = Category

@@ -50,7 +50,11 @@
             <form string="Article">
                 <group>
                     <field name="name"/>
+                    <field name="website_slug"/>
+                    <field name="website_slug_override"/>
                     <field name="body"/>
+                    <field name="price"/>
+                    <field name="availability"/>
                     <field name="article_images"/>
                 </group>
             </form>

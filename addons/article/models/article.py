@@ -14,8 +14,11 @@ class Article(models.Model):
 
     image_64 = fields.Image("Image 64", store=True, compute='_compute_image_1920')
 
-    website_slug = fields.Char('Website slug', readonly=True, compute='_compute_website_slug', store=True)
+    website_slug = fields.Char('Website slug', compute='_compute_website_slug', store=True)
+    website_slug_override = fields.Char('User-defined website slug')
     article_images = fields.One2many('article.image', 'article_id', 'Article images')
+    price = fields.Float('Price')
+    availability = fields.Char('Availability')
 
     def _default_is_published(self):
         return True

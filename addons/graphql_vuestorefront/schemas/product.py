@@ -215,7 +215,7 @@ class ProductQuery(graphene.ObjectType):
         if id:
             product = Product.search([('id', '=', id)], limit=1)
         elif slug:
-            product = Product.search([('website_slug', '=', slug)], limit=1)
+            product = Product.search(['|', ('website_slug', '=', slug), ('website_slug_override', '=', slug)], limit=1)
         elif barcode:
             product = Product.search([('barcode', '=', barcode)], limit=1)
         else:

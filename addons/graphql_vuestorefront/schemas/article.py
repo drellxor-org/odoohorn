@@ -54,7 +54,7 @@ class ArticleQuery(graphene.ObjectType):
         if id:
             article = article_model.search([('id', '=', id)], limit=1)
         elif slug:
-            product = Product.search(['|', ('website_slug', '=', slug), ('website_slug_override', '=', slug)], limit=1)
+            article = article_model.search(['|', ('website_slug', '=', slug), ('website_slug_override', '=', slug)], limit=1)
         else:
             article = article_model
         if not article:

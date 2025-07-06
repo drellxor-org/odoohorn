@@ -272,19 +272,28 @@ class CreateUpdatePartner(graphene.Mutation):
             'comment': comment
         }
 
-        partner = order.partner_id
+        partner = env['res.partner'].search([('email', '=', email)], limit=1)
+        if partner:
+            partner.name = name
+            partner.phone = phone
+            partner.comment = comment
+        else:
+            partner = env['res.partner'].sudo().create(data)
+        order.partner_id = partner.id
+        order.partner_invoice_id = partner.id
+        order.partner_shipping_id = partner.id
 
         # Is public user
-        if partner.id == website.user_id.sudo().partner_id.id:
-            partner = env['res.partner'].sudo().create(data)
-
-            order.write({
-                'partner_id': partner.id,
-                'partner_invoice_id': partner.id,
-                'partner_shipping_id': partner.id,
-            })
-        else:
-            partner.write(data)
+#         if partner.id == website.user_id.sudo().partner_id.id:
+#             partner = env['res.partner'].sudo().create(data)
+#
+#             order.write({
+#                 'partner_id': partner.id,
+#                 'partner_invoice_id': partner.id,
+#                 'partner_shipping_id': partner.id,
+#             })
+#         else:
+#             partner.write(data)
 
         return partner
 

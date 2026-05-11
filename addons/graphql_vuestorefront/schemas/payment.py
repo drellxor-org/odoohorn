@@ -108,17 +108,51 @@ class PaymentQuery(graphene.ObjectType):
 
 
 class confirmPayment(graphene.Mutation):
+    class Arguments:
+        name = graphene.String()
+        email = graphene.String()
+        phone = graphene.String()
+        comment = graphene.String()
+
     done = graphene.Boolean()
 
     @staticmethod
-    def mutate(self, info):
+    def mutate(self, info, name=None, email=None, phone=None, comment=None):
         env = info.context["env"]
         website = env['website'].get_current_website()
         request.website = website
         order = website.sale_get_order()
+
+        if not order:
+            raise GraphQLError(_('No active cart found.'))
+
         tx = order.get_portal_last_transaction()
 
-        if order and not order.amount_total and not tx:
+        if not order.amount_total and not tx:
+            public_partner = website.sudo().user_id.sudo().partner_id
+            has_real_partner = order.partner_id and order.partner_id.id != public_partner.id
+
+            if has_real_partner:
+                pass  # partner already set via createUpdatePartner, use as-is
+            elif name and email:
+                partner = env['res.partner'].search([('email', '=', email)], limit=1)
+                if partner:
+                    partner.write({'name': name, 'phone': phone, 'comment': comment})
+                else:
+                    partner = env['res.partner'].sudo().create({
+                        'name': name,
+                        'email': email,
+                        'phone': phone,
+                        'comment': comment,
+                    })
+                order.write({
+                    'partner_id': partner.id,
+                    'partner_invoice_id': partner.id,
+                    'partner_shipping_id': partner.id,
+                })
+            else:
+                raise GraphQLError(_('Customer information is required before confirming the order.'))
+
             order.with_context(send_email=True).action_confirm()
             return confirmPayment(done=True)
 

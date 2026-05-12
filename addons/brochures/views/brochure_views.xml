@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="brochure_tree" model="ir.ui.view">
+        <field name="name">brochure.tree</field>
+        <field name="model">brochure</field>
+        <field name="arch" type="xml">
+            <tree string="Brochures">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="category_ids" widget="many2many_tags" optional="show"/>
+                <field name="popularity" optional="show"/>
+                <field name="is_published" optional="hide"/>
+                <field name="website_slug" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="brochure_form" model="ir.ui.view">
+        <field name="name">brochure.form</field>
+        <field name="model">brochure</field>
+        <field name="arch" type="xml">
+            <form string="Brochure">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="category_ids" widget="many2many_tags"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                            <field name="is_published"/>
+                            <field name="popularity" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="website_slug" readonly="1"/>
+                            <field name="website_slug_override"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description_sale"/>
+                        </page>
+                        <page string="Page Message">
+                            <field name="page_message"/>
+                        </page>
+                        <page string="Attachments">
+                            <field name="attachment_ids">
+                                <tree editable="bottom">
+                                    <field name="filename"/>
+                                    <field name="attachment" filename="filename"/>
+                                    <field name="is_published"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="SEO">
+                            <group>
+                                <field name="website_meta_title"/>
+                                <field name="website_meta_description"/>
+                                <field name="website_meta_keywords"/>
+                                <field name="website_meta_og_img"/>
+                                <field name="json_ld"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="brochure_search" model="ir.ui.view">
+        <field name="name">brochure.search</field>
+        <field name="model">brochure</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="category_ids"/>
+                <filter name="archived" string="Archived" domain="[('active','=',False)]"/>
+                <filter name="published" string="Published" domain="[('is_published','=',True)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_brochure" model="ir.actions.act_window">
+        <field name="name">Brochures</field>
+        <field name="res_model">brochure</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

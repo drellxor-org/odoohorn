@@ -298,6 +298,55 @@ class CreateUpdatePartner(graphene.Mutation):
         return partner
 
 
+class CartAddBrochureItem(graphene.Mutation):
+    class Arguments:
+        brochure_id = graphene.Int(required=True)
+        machine_serial = graphene.String()
+        part_number = graphene.String()
+        commentary = graphene.String()
+
+    Output = CartData
+
+    @staticmethod
+    def mutate(self, info, brochure_id, machine_serial=None, part_number=None, commentary=None):
+        env = info.context["env"]
+        website = env['website'].get_current_website()
+        request.website = website
+        order = website.sale_get_order(force_create=1)
+        order.write({'website_id': website.id})
+
+        brochure = env['brochure'].sudo().browse(brochure_id).exists()
+        if not brochure:
+            raise GraphQLError(f'Brochure {brochure_id} not found')
+
+        env['sale.order.brochure.line'].sudo().create({
+            'order_id': order.id,
+            'brochure_id': brochure.id,
+            'name': brochure.name,
+            'machine_serial': machine_serial,
+            'part_number': part_number,
+            'commentary': commentary,
+        })
+        return CartData(order=order)
+
+
+class CartRemoveBrochureItem(graphene.Mutation):
+    class Arguments:
+        line_id = graphene.Int(required=True)
+
+    Output = CartData
+
+    @staticmethod
+    def mutate(self, info, line_id):
+        env = info.context["env"]
+        website = env['website'].get_current_website()
+        request.website = website
+        order = website.sale_get_order(force_create=1)
+        line = order.brochure_line_ids.filtered(lambda l: l.id == line_id)
+        line.unlink()
+        return CartData(order=order)
+
+
 class ShopMutation(graphene.ObjectType):
     cart_add_item = CartAddItem.Field(description="Add Item")
     cart_update_item = CartUpdateItem.Field(description="Update Item")
@@ -308,3 +357,5 @@ class ShopMutation(graphene.ObjectType):
     cart_remove_multiple_items = CartRemoveMultipleItems.Field(description="Remove Multiple Items")
     set_shipping_method = SetShippingMethod.Field(description="Set Shipping Method on Cart")
     create_update_partner = CreateUpdatePartner.Field(description="Create or update a partner for guest checkout")
+    cart_add_brochure_item = CartAddBrochureItem.Field(description="Add a brochure to the cart")
+    cart_remove_brochure_item = CartRemoveBrochureItem.Field(description="Remove a brochure line from the cart")

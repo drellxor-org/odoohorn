@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_brochures_root" name="Brochures" sequence="50"/>
+    <menuitem id="menu_brochures" name="Brochures" parent="menu_brochures_root"
+              action="action_brochure" sequence="10"/>
+    <menuitem id="menu_brochure_categories" name="Categories" parent="menu_brochures_root"
+              action="action_brochure_category" sequence="20"/>
+</odoo>

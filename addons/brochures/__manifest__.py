@@ -1,0 +1,25 @@
+{
+    'name': 'Brochures',
+    'version': '1.0',
+    'description': 'Brochures (parts diagrams) as a first-class entity, decoupled from product.template.',
+    'category': 'Website',
+    'author': 'drellxor',
+    'depends': [
+        'website_sale',
+        'website',
+        'simplify_odoo',
+        'order_product_info',
+        'product_attachment',
+    ],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/brochure_category_views.xml',
+        'views/brochure_views.xml',
+        'views/brochure_attachment_views.xml',
+        'views/sale_order_views.xml',
+        'views/menu.xml',
+    ],
+    'post_init_hook': 'migrate_data',
+    'installable': True,
+    'auto_install': False,
+}

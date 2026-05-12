@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="brochure_category_tree" model="ir.ui.view">
+        <field name="name">brochure.category.tree</field>
+        <field name="model">brochure.category</field>
+        <field name="arch" type="xml">
+            <tree string="Brochure Categories">
+                <field name="sequence" widget="handle"/>
+                <field name="complete_name"/>
+                <field name="parent_id"/>
+                <field name="website_slug" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="brochure_category_form" model="ir.ui.view">
+        <field name="name">brochure.category.form</field>
+        <field name="model">brochure.category</field>
+        <field name="arch" type="xml">
+            <form string="Brochure Category">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="parent_id"/>
+                            <field name="sequence"/>
+                            <field name="is_published"/>
+                        </group>
+                        <group>
+                            <field name="website_slug" readonly="1"/>
+                            <field name="website_slug_override"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Page Message">
+                            <field name="page_message"/>
+                        </page>
+                        <page string="SEO">
+                            <group>
+                                <field name="website_meta_title"/>
+                                <field name="website_meta_description"/>
+                                <field name="website_meta_keywords"/>
+                                <field name="website_meta_og_img"/>
+                                <field name="json_ld"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_brochure_category" model="ir.actions.act_window">
+        <field name="name">Brochure Categories</field>
+        <field name="res_model">brochure.category</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

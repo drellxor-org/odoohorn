@@ -634,6 +634,28 @@ class OrderLine(OdooObjectType):
         return coupon
 
 
+class OrderBrochureLine(OdooObjectType):
+    id = graphene.Int(required=True)
+    name = graphene.String()
+    machine_serial = graphene.String()
+    part_number = graphene.String()
+    commentary = graphene.String()
+    brochure_id = graphene.Int()
+    brochure_name = graphene.String()
+    brochure_slug = graphene.String()
+
+    def resolve_brochure_id(self, info):
+        return self.brochure_id.id if self.brochure_id else None
+
+    def resolve_brochure_name(self, info):
+        return self.brochure_id.name if self.brochure_id else None
+
+    def resolve_brochure_slug(self, info):
+        if not self.brochure_id:
+            return None
+        return self.brochure_id.website_slug_override or self.brochure_id.website_slug or None
+
+
 class Coupon(OdooObjectType):
     id = graphene.Int(required=True)
     code = graphene.String()
@@ -680,6 +702,7 @@ class Order(OdooObjectType):
     currency = graphene.Field(lambda: Currency)
     order_lines = graphene.List(graphene.NonNull(lambda: OrderLine))
     website_order_line = graphene.List(graphene.NonNull(lambda: OrderLine))
+    brochure_lines = graphene.List(graphene.NonNull(lambda: OrderBrochureLine))
     stage = OrderStage()
     order_url = graphene.String()
     transactions = graphene.List(graphene.NonNull(lambda: PaymentTransaction))
@@ -717,6 +740,9 @@ class Order(OdooObjectType):
 
     def resolve_website_order_line(self, info):
         return self.website_order_line or None
+
+    def resolve_brochure_lines(self, info):
+        return self.brochure_line_ids or None
 
     def resolve_stage(self, info):
         return self.state or None

@@ -1,0 +1,3 @@
+/config/development/.env
+/config/development/nginx.conf
+/config/development/odoo.conf

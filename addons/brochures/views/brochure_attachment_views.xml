@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="brochure_attachment_tree" model="ir.ui.view">
+        <field name="name">brochure.attachment.tree</field>
+        <field name="model">brochure.attachment</field>
+        <field name="arch" type="xml">
+            <tree string="Attachment">
+                <field name="brochure_id"/>
+                <field name="attachment" filename="filename"/>
+                <field name="filename"/>
+                <field name="is_published"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="brochure_attachment_form" model="ir.ui.view">
+        <field name="name">brochure.attachment.form</field>
+        <field name="model">brochure.attachment</field>
+        <field name="arch" type="xml">
+            <form string="Attachment">
+                <group>
+                    <field name="brochure_id"/>
+                    <field name="attachment" filename="filename"/>
+                    <field name="is_published"/>
+                </group>
+            </form>
+        </field>
+    </record>
+</odoo>

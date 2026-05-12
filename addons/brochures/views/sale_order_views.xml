@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sale_order_form_brochure_lines" model="ir.ui.view">
+        <field name="name">sale.order.form.brochure.lines</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Brochure lines" name="brochure_lines">
+                    <field name="brochure_line_ids">
+                        <tree editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="brochure_id"/>
+                            <field name="name"/>
+                            <field name="machine_serial"/>
+                            <field name="part_number"/>
+                            <field name="commentary"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -27,7 +27,8 @@
         'order_product_info',
         'page_message',
         'product_attachment',
-        'simplify_odoo'
+        'simplify_odoo',
+        'brochures',
     ],
     'data': [
         'security/ir.model.access.csv',

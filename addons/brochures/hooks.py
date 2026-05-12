@@ -159,45 +159,65 @@ def _migrate_order_lines(env, brochure_map):
         })
 
 
+def _try_unlink(env, record, label):
+    """Unlink inside a savepoint so a per-row failure (FK violation, Odoo rule, etc.)
+    doesn't poison the surrounding postgres transaction.
+    """
+    try:
+        with env.cr.savepoint():
+            record.unlink()
+    except Exception as e:
+        _logger.warning('[brochures] could not unlink %s %s: %s', label, record.id, e)
+
+
 def _cleanup_legacy(env, brochure_map):
-    """Try to delete the now-migrated sale.order.line, child product.templates, and parent product.templates.
-    Failures (e.g. confirmed-order side effects) are logged but don't abort the install.
+    """Delete the now-migrated sale.order.line, child product.templates, and parent product.templates.
+    Each unlink runs inside its own savepoint, so a single failure (e.g. confirmed-order rule,
+    FK from leftover lines) is logged but doesn't abort the surrounding transaction.
     """
     SaleOrderLine = env['sale.order.line'].sudo()
     Product = env['product.template'].sudo()
     ProductAttachment = env.get('product.attachment') and env['product.attachment'].sudo()
 
-    # 1. sale.order.line
+    # 1. sale.order.line — raw SQL DELETE to bypass Odoo's "can't unlink confirmed line" rule.
+    #    Each row runs in its own savepoint so a FK violation on one doesn't abort the rest.
     lines = SaleOrderLine.with_context(active_test=False).search([
         ('product_template_id', 'in', list(brochure_map.keys())),
     ])
-    for line in lines:
+    for line_id in lines.ids:
         try:
-            line.unlink()
+            with env.cr.savepoint():
+                env.cr.execute("DELETE FROM sale_order_line WHERE id = %s", (line_id,))
         except Exception as e:
-            _logger.warning('[brochures] could not unlink sale.order.line %s: %s', line.id, e)
+            _logger.warning('[brochures] could not delete sale.order.line %s: %s', line_id, e)
 
-    # 2. product.attachment (already copied to brochure.attachment)
+    # 2. product.attachment (binary was re-pointed via SQL in _migrate_attachments)
     if ProductAttachment:
-        atts = ProductAttachment.search([('product_id', 'in', list(brochure_map.keys()))])
-        try:
-            atts.unlink()
-        except Exception as e:
-            _logger.warning('[brochures] could not unlink some product.attachments: %s', e)
+        for att in ProductAttachment.search([('product_id', 'in', list(brochure_map.keys()))]):
+            _try_unlink(env, att, 'product.attachment')
 
-    # 3. child product.templates (parent_template set) — unconditionally
+    # 3. Stock records referencing the soon-to-be-deleted variants — raw SQL so we can
+    #    clear the FK references that would otherwise block product unlink.
     user_products = _user_defined_ids(env, 'product.template')
-    children = user_products.filtered(lambda p: p.parent_template)
-    for child in children:
-        try:
-            child.with_context(active_test=False).unlink()
-        except Exception as e:
-            _logger.warning('[brochures] could not unlink child product.template %s: %s', child.id, e)
+    variant_ids = env['product.product'].with_context(active_test=False).search([
+        ('product_tmpl_id', 'in', user_products.ids),
+    ]).ids
+    if variant_ids:
+        for table in ('stock_move_line', 'stock_move', 'stock_quant',
+                      'stock_warehouse_orderpoint', 'stock_scrap'):
+            try:
+                with env.cr.savepoint():
+                    env.cr.execute(
+                        f"DELETE FROM {table} WHERE product_id = ANY(%s)", (variant_ids,))
+                _logger.info('[brochures] cleared %s rows in %s', env.cr.rowcount, table)
+            except Exception as e:
+                _logger.warning('[brochures] could not clear %s: %s', table, e)
 
-    # 4. parent product.templates that were migrated
+    # 4. child product.templates (parent_template set)
+    for child in user_products.filtered(lambda p: p.parent_template):
+        _try_unlink(env, child.with_context(active_test=False), 'child product.template')
+
+    # 5. parent product.templates that were migrated
     parents = Product.browse(list(brochure_map.keys())).exists().filtered(lambda p: not p.parent_template)
     for parent in parents:
-        try:
-            parent.with_context(active_test=False).unlink()
-        except Exception as e:
-            _logger.warning('[brochures] could not unlink product.template %s (%s): %s', parent.id, parent.name, e)
+        _try_unlink(env, parent.with_context(active_test=False), 'product.template')

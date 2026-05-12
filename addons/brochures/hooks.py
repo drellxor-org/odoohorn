@@ -221,3 +221,7 @@ def _cleanup_legacy(env, brochure_map):
     parents = Product.browse(list(brochure_map.keys())).exists().filtered(lambda p: not p.parent_template)
     for parent in parents:
         _try_unlink(env, parent.with_context(active_test=False), 'product.template')
+
+    # 6. user-defined product.public.category records (mirrored as brochure.category)
+    for cat in _user_defined_ids(env, 'product.public.category'):
+        _try_unlink(env, cat.with_context(active_test=False), 'product.public.category')

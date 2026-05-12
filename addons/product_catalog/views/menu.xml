@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_product_catalog_root" name="Catalog" sequence="55"/>
+    <menuitem id="menu_product_catalog_products" name="Products" parent="menu_product_catalog_root"
+              action="action_product_template_catalog" sequence="5"/>
+    <menuitem id="menu_product_catalog_makes" name="Makes" parent="menu_product_catalog_root"
+              action="action_product_make" sequence="10"/>
+    <menuitem id="menu_product_catalog_applications" name="Applications" parent="menu_product_catalog_root"
+              action="action_product_application" sequence="20"/>
+    <menuitem id="menu_product_catalog_sources" name="Data sources" parent="menu_product_catalog_root"
+              action="action_data_source" sequence="30"/>
+</odoo>

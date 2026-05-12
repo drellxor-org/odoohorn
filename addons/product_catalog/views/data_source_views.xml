@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="data_source_tree" model="ir.ui.view">
+        <field name="name">data.source.tree</field>
+        <field name="model">data.source</field>
+        <field name="arch" type="xml">
+            <tree string="Data sources">
+                <field name="code"/>
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="data_source_form" model="ir.ui.view">
+        <field name="name">data.source.form</field>
+        <field name="model">data.source</field>
+        <field name="arch" type="xml">
+            <form string="Data source">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="name"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_data_source" model="ir.actions.act_window">
+        <field name="name">Data sources</field>
+        <field name="res_model">data.source</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+data_source_user,data_source_user,model_data_source,base.group_user,1,0,0,0
+data_source_manager,data_source_manager,model_data_source,base.group_system,1,1,1,1
+product_make_user,product_make_user,model_product_make,base.group_user,1,1,1,0
+product_make_manager,product_make_manager,model_product_make,base.group_system,1,1,1,1
+product_application_user,product_application_user,model_product_application,base.group_user,1,1,1,1
+product_application_manager,product_application_manager,model_product_application,base.group_system,1,1,1,1

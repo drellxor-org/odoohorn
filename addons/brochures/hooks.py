@@ -114,21 +114,28 @@ def _migrate_brochures(env, cat_map):
 
 
 def _migrate_attachments(env, brochure_map):
+    """Create brochure.attachment rows and re-point the existing ir.attachment binary
+    rows via raw SQL. Never reads the binary into Python memory (files stay on disk).
+    """
     if 'product.attachment' not in env:
         return
     BrochureAttachment = env['brochure.attachment'].sudo()
+    cr = env.cr
     for att in env['product.attachment'].sudo().search([]):
         bid = brochure_map.get(att.product_id.id)
         if not bid:
             continue
-        vals = {
-            'brochure_id': bid,
-            'attachment': att.attachment,
-            'filename': att.filename,
-        }
+        vals = {'brochure_id': bid, 'filename': att.filename}
         if 'is_published' in att._fields:
             vals['is_published'] = att.is_published
-        BrochureAttachment.create(vals)
+        new_att = BrochureAttachment.create(vals)
+        cr.execute("""
+            UPDATE ir_attachment
+               SET res_model = 'brochure.attachment', res_id = %s
+             WHERE res_model = 'product.attachment'
+               AND res_id = %s
+               AND res_field = 'attachment'
+        """, (new_att.id, att.id))
 
 
 def _migrate_order_lines(env, brochure_map):

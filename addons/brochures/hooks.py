@@ -177,12 +177,26 @@ def _cleanup_legacy(env, brochure_map):
     """
     SaleOrderLine = env['sale.order.line'].sudo()
     Product = env['product.template'].sudo()
-    ProductAttachment = env.get('product.attachment') and env['product.attachment'].sudo()
+    user_products = _user_defined_ids(env, 'product.template')
+    template_ids = user_products.ids
+    variant_ids = env['product.product'].with_context(active_test=False).search([
+        ('product_tmpl_id', 'in', template_ids),
+    ]).ids
+
+    def _sql_delete(table, where_col, ids):
+        if not ids:
+            return
+        try:
+            with env.cr.savepoint():
+                env.cr.execute(
+                    f"DELETE FROM {table} WHERE {where_col} = ANY(%s)", (ids,))
+            _logger.info('[brochures] cleared %s rows in %s', env.cr.rowcount, table)
+        except Exception as e:
+            _logger.warning('[brochures] could not clear %s: %s', table, e)
 
     # 1. sale.order.line — raw SQL DELETE to bypass Odoo's "can't unlink confirmed line" rule.
-    #    Each row runs in its own savepoint so a FK violation on one doesn't abort the rest.
     lines = SaleOrderLine.with_context(active_test=False).search([
-        ('product_template_id', 'in', list(brochure_map.keys())),
+        ('product_template_id', 'in', template_ids),
     ])
     for line_id in lines.ids:
         try:
@@ -191,27 +205,13 @@ def _cleanup_legacy(env, brochure_map):
         except Exception as e:
             _logger.warning('[brochures] could not delete sale.order.line %s: %s', line_id, e)
 
-    # 2. product.attachment (binary was re-pointed via SQL in _migrate_attachments)
-    if ProductAttachment:
-        for att in ProductAttachment.search([('product_id', 'in', list(brochure_map.keys()))]):
-            _try_unlink(env, att, 'product.attachment')
+    # 2. product.attachment (binary was re-pointed via SQL earlier; rows themselves can go)
+    _sql_delete('product_attachment', 'product_id', template_ids)
 
-    # 3. Stock records referencing the soon-to-be-deleted variants — raw SQL so we can
-    #    clear the FK references that would otherwise block product unlink.
-    user_products = _user_defined_ids(env, 'product.template')
-    variant_ids = env['product.product'].with_context(active_test=False).search([
-        ('product_tmpl_id', 'in', user_products.ids),
-    ]).ids
-    if variant_ids:
-        for table in ('stock_move_line', 'stock_move', 'stock_quant',
-                      'stock_warehouse_orderpoint', 'stock_scrap'):
-            try:
-                with env.cr.savepoint():
-                    env.cr.execute(
-                        f"DELETE FROM {table} WHERE product_id = ANY(%s)", (variant_ids,))
-                _logger.info('[brochures] cleared %s rows in %s', env.cr.rowcount, table)
-            except Exception as e:
-                _logger.warning('[brochures] could not clear %s: %s', table, e)
+    # 3. Stock records referencing the variants — clear FKs that would block product unlink.
+    for table in ('stock_move_line', 'stock_move', 'stock_quant',
+                  'stock_warehouse_orderpoint', 'stock_scrap'):
+        _sql_delete(table, 'product_id', variant_ids)
 
     # 4. child product.templates (parent_template set)
     for child in user_products.filtered(lambda p: p.parent_template):

@@ -32,7 +32,16 @@ def get_search_order(sort):
     return sorting
 
 
-def get_search_domain(env, search, **kwargs):
+CATEGORY_LEVEL_KEYS = ('family_ids', 'subfamily_ids', 'subsubfamily_ids')
+
+
+def get_search_domain(env, search, exclude_facet=None, **kwargs):
+    """Build the product search domain.
+
+    `exclude_facet` is one of {'make_ids','family_ids','subfamily_ids','subsubfamily_ids'};
+    when set, that filter is dropped (used by facet aggregation so the user sees
+    sibling options).
+    """
     # Only get published products
     domains = [env['website'].get_current_website().sale_product_domain()]
 
@@ -47,6 +56,14 @@ def get_search_domain(env, search, **kwargs):
     # Filter with Category Slug
     if kwargs.get('category_slug', False):
         domains.append([('public_categ_slug_ids.website_slug', '=', kwargs['category_slug'])])
+
+    # Facet filters — nested under filter.facets in the GraphQL input.
+    facets = kwargs.get('facets') or {}
+    if facets.get('make_ids') and exclude_facet != 'make_ids':
+        domains.append([('make_id', 'in', facets['make_ids'])])
+    for key in CATEGORY_LEVEL_KEYS:
+        if facets.get(key) and exclude_facet != key:
+            domains.append([('public_categ_ids', 'child_of', facets[key])])
 
     # Filter With Name
     if kwargs.get('name', False):
@@ -101,6 +118,44 @@ def get_search_domain(env, search, **kwargs):
     return expression.AND(domains), expression.AND(partial_domain)
 
 
+def _category_depth(category):
+    """0 for top-level family, 1 for subfamily, 2 for sub-subfamily."""
+    return (category.parent_path or '').count('/') - 1
+
+
+def _aggregate_makes(products):
+    counts = {}
+    names = {}
+    codes = {}
+    for p in products:
+        m = p.make_id
+        if not m:
+            continue
+        counts[m.id] = counts.get(m.id, 0) + 1
+        names[m.id] = m.name
+        codes[m.id] = m.code
+    return [{'id': mid, 'name': names[mid], 'code': codes[mid], 'count': cnt, 'parent_id': None}
+            for mid, cnt in counts.items()]
+
+
+def _aggregate_categories(products, depth):
+    """Aggregate categories at `depth` over the products' public_categ_slug_ids
+    (which already includes ancestors)."""
+    counts = {}
+    names = {}
+    parents = {}
+    for p in products:
+        cats = p.public_categ_slug_ids if 'public_categ_slug_ids' in p._fields else p.public_categ_ids
+        for c in cats:
+            if _category_depth(c) != depth:
+                continue
+            counts[c.id] = counts.get(c.id, 0) + 1
+            names[c.id] = c.display_name or c.name
+            parents[c.id] = c.parent_id.id if c.parent_id else None
+    return [{'id': cid, 'name': names[cid], 'parent_id': parents[cid], 'count': cnt, 'code': None}
+            for cid, cnt in counts.items()]
+
+
 def get_product_list(env, current_page, page_size, search, sort, **kwargs):
     Product = env['product.template'].sudo()
     domain, partial_domain = get_search_domain(env, search, **kwargs)
@@ -123,10 +178,28 @@ def get_product_list(env, current_page, page_size, search, sort, **kwargs):
         prices = without_attributes_products.mapped('list_price')
 
     total_count = len(products)
-    products = products[offset:offset + page_size]
+    paged = products[offset:offset + page_size]
+
+    # Facets — strict style: all dimensions are computed from the already-filtered
+    # product set, so the available options never exceed what the current filter
+    # actually contains.
+    available_makes = _aggregate_makes(products)
+    available_families = _aggregate_categories(products, depth=0)
+    available_subfamilies = _aggregate_categories(products, depth=1)
+    available_subsubfamilies = _aggregate_categories(products, depth=2)
+
     if prices:
-        return products, total_count, attribute_values, min(prices), max(prices)
-    return products, total_count, attribute_values, 0.0, 0.0
+        return (paged, total_count, attribute_values, min(prices), max(prices),
+                available_makes, available_families, available_subfamilies, available_subsubfamilies)
+    return (paged, total_count, attribute_values, 0.0, 0.0,
+            available_makes, available_families, available_subfamilies, available_subsubfamilies)
+
+
+class ProductFacets(graphene.ObjectType):
+    makes = graphene.List(graphene.NonNull(lambda: FacetValue))
+    families = graphene.List(graphene.NonNull(lambda: FacetValue))
+    subfamilies = graphene.List(graphene.NonNull(lambda: FacetValue))
+    subsubfamilies = graphene.List(graphene.NonNull(lambda: FacetValue))
 
 
 class Products(graphene.Interface):
@@ -135,11 +208,19 @@ class Products(graphene.Interface):
     attribute_values = graphene.List(AttributeValue)
     min_price = graphene.Float()
     max_price = graphene.Float()
+    facets = graphene.Field(ProductFacets)
 
 
 class ProductList(graphene.ObjectType):
     class Meta:
         interfaces = (Products,)
+
+
+class FacetFilterInput(graphene.InputObjectType):
+    make_ids = graphene.List(graphene.Int)
+    family_ids = graphene.List(graphene.Int)
+    subfamily_ids = graphene.List(graphene.Int)
+    subsubfamily_ids = graphene.List(graphene.Int)
 
 
 class ProductFilterInput(graphene.InputObjectType):
@@ -152,6 +233,15 @@ class ProductFilterInput(graphene.InputObjectType):
     name = graphene.String()
     min_price = graphene.Float()
     max_price = graphene.Float()
+    facets = graphene.Field(FacetFilterInput)
+
+
+class FacetValue(graphene.ObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    name = graphene.String()
+    parent_id = graphene.Int()
+    count = graphene.Int(required=True)
 
 
 class ProductSortInput(graphene.InputObjectType):
@@ -236,10 +326,24 @@ class ProductQuery(graphene.ObjectType):
         website = env['website'].get_current_website()
         request.website = website
 
-        products, total_count, attribute_values,min_price, max_price = get_product_list(
+        (products, total_count, attribute_values, min_price, max_price,
+         available_makes, available_families, available_subfamilies,
+         available_subsubfamilies) = get_product_list(
             env, current_page, page_size, search, sort, **filter)
-        return ProductList(products=products, total_count=total_count, attribute_values=attribute_values,
-                           min_price=min_price, max_price=max_price)
+        facets = ProductFacets(
+            makes=[FacetValue(**f) for f in available_makes],
+            families=[FacetValue(**f) for f in available_families],
+            subfamilies=[FacetValue(**f) for f in available_subfamilies],
+            subsubfamilies=[FacetValue(**f) for f in available_subsubfamilies],
+        )
+        return ProductList(
+            products=products,
+            total_count=total_count,
+            attribute_values=attribute_values,
+            min_price=min_price,
+            max_price=max_price,
+            facets=facets,
+        )
 
     @staticmethod
     def resolve_attribute(self, info, id):

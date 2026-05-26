@@ -20,6 +20,9 @@ _logger = logging.getLogger(__name__)
 
 
 class VSFBinary(Binary):
+    _VALID_DOWNLOAD = {'0', '1', 'yes', 'no', 'true', 'false', 'on', 'off',
+                       'y', 'n', 't', 'f'}
+
     @http.route(['/web/image',
                  '/web/image/<string:xmlid>',
                  '/web/image/<string:xmlid>/<string:filename>',
@@ -46,11 +49,16 @@ class VSFBinary(Binary):
         try:
             ICP = request.env['ir.config_parameter'].sudo()
             vsf_image_resize_limit = int(ICP.get_param('vsf_image_resize_limit', 1920))
-            
+
             if width > vsf_image_resize_limit or height > vsf_image_resize_limit:
                 return request.not_found()
         except Exception:
             return request.not_found()
+
+        # Odoo's super calls str2bool(download) and raises ValueError on any other value.
+        # Defensively coerce: anything not recognised becomes None (no download).
+        if download is not None and str(download).lower() not in self._VALID_DOWNLOAD:
+            download = 0
 
         return super(VSFBinary, self).content_image(
             xmlid=xmlid, model=model, id=id, field=field, filename_field=filename_field, unique=unique,

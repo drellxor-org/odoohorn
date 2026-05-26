@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Re-runs on every -u graphql_vuestorefront. Idempotent (CREATE EXTENSION /
+         CREATE INDEX IF NOT EXISTS). -->
+    <function model="search.engine" name="_ensure_search_indexes"/>
+</odoo>

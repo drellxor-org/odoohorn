@@ -5,3 +5,9 @@ product_make_user,product_make_user,model_product_make,base.group_user,1,1,1,0
 product_make_manager,product_make_manager,model_product_make,base.group_system,1,1,1,1
 product_application_user,product_application_user,model_product_application,base.group_user,1,1,1,1
 product_application_manager,product_application_manager,model_product_application,base.group_system,1,1,1,1
+tvh_availability_code_user,tvh_availability_code_user,model_tvh_availability_code,base.group_user,1,0,0,0
+tvh_availability_code_manager,tvh_availability_code_manager,model_tvh_availability_code,base.group_system,1,1,1,1
+tvh_unit_code_user,tvh_unit_code_user,model_tvh_unit_code,base.group_user,1,0,0,0
+tvh_unit_code_manager,tvh_unit_code_manager,model_tvh_unit_code,base.group_system,1,1,1,1
+product_tvh_quantity_discount_user,product_tvh_quantity_discount_user,model_product_tvh_quantity_discount,base.group_user,1,0,0,0
+product_tvh_quantity_discount_manager,product_tvh_quantity_discount_manager,model_product_tvh_quantity_discount,base.group_system,1,1,1,1

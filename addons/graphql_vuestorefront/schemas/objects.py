@@ -363,6 +363,66 @@ class Ribbon(OdooObjectType):
     display_name = graphene.String()
 
 
+class DataSource(OdooObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    name = graphene.String()
+
+
+class ProductMake(OdooObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    name = graphene.String()
+    data_source = graphene.Field(lambda: DataSource)
+
+    def resolve_data_source(self, info):
+        return self.data_source_id or None
+
+
+class TvhAvailabilityCode(OdooObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    description = graphene.String()
+
+
+class TvhUnitCode(OdooObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    description = graphene.String()
+    iso_code = graphene.String()
+
+
+class ProductTvhQuantityDiscount(OdooObjectType):
+    id = graphene.Int(required=True)
+    qty = graphene.Float()
+    price = graphene.Float()
+
+
+class ProductApplication(OdooObjectType):
+    id = graphene.Int(required=True)
+    make = graphene.Field(lambda: ProductMake)
+    model = graphene.String()
+    serie = graphene.String()
+    vehicle_type_code = graphene.String()
+    brochure_id = graphene.Int()
+    brochure_name = graphene.String()
+    brochure_slug = graphene.String()
+
+    def resolve_make(self, info):
+        return self.make_id or None
+
+    def resolve_brochure_id(self, info):
+        return self.brochure_id.id if self.brochure_id else None
+
+    def resolve_brochure_name(self, info):
+        return self.brochure_id.name if self.brochure_id else None
+
+    def resolve_brochure_slug(self, info):
+        if not self.brochure_id:
+            return None
+        return self.brochure_id.website_slug_override or self.brochure_id.website_slug or None
+
+
 class Product(OdooObjectType):
     id = graphene.Int(required=True)
     type_id = graphene.String()
@@ -390,7 +450,7 @@ class Product(OdooObjectType):
     is_in_stock = graphene.Boolean()
     is_in_wishlist = graphene.Boolean()
     media_gallery = graphene.List(graphene.NonNull(lambda: ProductImage))
-    qty = graphene.Float()
+    qty = graphene.String()
     slug = graphene.String()
     alternative_products = graphene.List(graphene.NonNull(lambda: Product))
     accessory_products = graphene.List(graphene.NonNull(lambda: Product))
@@ -415,6 +475,41 @@ class Product(OdooObjectType):
     page_message = graphene.String()
     attachments = graphene.List(graphene.String)
     seo_metadata = generic.GenericScalar()
+
+    # --- product_catalog --------------------------------------------------------
+    default_code = graphene.String()
+    data_source = graphene.Field(lambda: DataSource)
+    make = graphene.Field(lambda: ProductMake)
+    is_dangerous_goods = graphene.Boolean()
+    weight_gr = graphene.Float()
+    length_mm = graphene.Float()
+    width_mm = graphene.Float()
+    height_mm = graphene.Float()
+    applications = graphene.List(graphene.NonNull(lambda: ProductApplication))
+
+    # --- TVH-specific ----------------------------------------------------------
+    tvh_number = graphene.Int()
+    tvh_price = graphene.Float()
+    tvh_list_price = graphene.Float()
+    tvh_quantity_in_stock = graphene.String()
+    tvh_quantity_updated_at = graphene.String()
+    quality_brand = graphene.String()
+    unit_code = graphene.Field(lambda: TvhUnitCode)
+    stock_unit_matrix_desc = graphene.String()
+    availability_code = graphene.Field(lambda: TvhAvailabilityCode)
+    is_reconditioned = graphene.Boolean()
+    is_non_returnable = graphene.Boolean()
+    is_non_cancellable = graphene.Boolean()
+    surcharge_amount = graphene.Float()
+    environmental_fee = graphene.Float()
+    minimum_order_quantity = graphene.Float()
+    orderable = graphene.Boolean()
+    not_orderable_reason = graphene.String()
+    tvh_quantity_discounts = graphene.List(graphene.NonNull(lambda: ProductTvhQuantityDiscount))
+
+    # --- replacement chain -----------------------------------------------------
+    replaced_by = graphene.Field(lambda: Product)
+    latest_product = graphene.Field(lambda: Product)
 
     def resolve_type_id(self, info):
         if self.detailed_type == 'product':
@@ -495,7 +590,9 @@ class Product(OdooObjectType):
             return self.product_template_image_ids + self.product_variant_image_ids or None
 
     def resolve_qty(self, info):
-        return self.free_qty
+        # tvh_quantity_in_stock is already formatted per the TVH Stockfile convention
+        # ("NO" / "1" / ... / "+10") when written by tvh.service.
+        return self.tvh_quantity_in_stock or 'NO'
 
     def resolve_slug(self, info):
         return self.website_slug_override or self.website_slug or None
@@ -562,6 +659,39 @@ class Product(OdooObjectType):
 
     def resolve_seo_metadata(self, info):
         return self.get_website_meta() or None
+
+    # --- product_catalog resolvers -------------------------------------------
+    def resolve_data_source(self, info):
+        return self.data_source_id or None
+
+    def resolve_make(self, info):
+        return self.make_id or None
+
+    def resolve_applications(self, info):
+        return self.application_ids or None
+
+    # --- TVH resolvers --------------------------------------------------------
+    def resolve_tvh_quantity_updated_at(self, info):
+        return self.tvh_quantity_updated_at and self.tvh_quantity_updated_at.isoformat() or None
+
+    def resolve_unit_code(self, info):
+        return self.unit_code_id or None
+
+    def resolve_availability_code(self, info):
+        return self.availability_code_id or None
+
+    def resolve_orderable(self, info):
+        return bool(self.sale_ok)
+
+    def resolve_tvh_quantity_discounts(self, info):
+        return self.tvh_quantity_discount_ids or None
+
+    # --- replacement chain ----------------------------------------------------
+    def resolve_replaced_by(self, info):
+        return self.replaced_by_id or None
+
+    def resolve_latest_product(self, info):
+        return self.latest_product_id or None
 
 
 class Payment(OdooObjectType):

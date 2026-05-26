@@ -153,7 +153,11 @@ class confirmPayment(graphene.Mutation):
             else:
                 raise GraphQLError(_('Customer information is required before confirming the order.'))
 
-            order.with_context(send_email=True).action_confirm()
+            # Move the quotation to "Quotation Sent" rather than confirming it as a sale,
+            # so the salesperson reviews / accepts it before fulfilment.
+            order.sudo().action_quotation_sent()
+            # Still notify the customer + the company (mail template lives in order_product_info).
+            order.sudo()._send_order_confirmation_mail()
             return confirmPayment(done=True)
 
         return confirmPayment(done=False)

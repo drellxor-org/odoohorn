@@ -113,6 +113,7 @@ class BrochureQuery(graphene.ObjectType):
     @staticmethod
     def resolve_brochure(self, info, id=None, slug=None):
         env = info.context['env']
+        request.website = env['website'].get_current_website()
         Brochure_ = env['brochure'].sudo()
         if id:
             rec = Brochure_.browse(id).exists()
@@ -129,6 +130,7 @@ class BrochureQuery(graphene.ObjectType):
     def resolve_brochures(self, info, search, category_id=None, category_slug=None,
                           page_size=20, current_page=1):
         env = info.context['env']
+        request.website = env['website'].get_current_website()
         Brochure_ = env['brochure'].sudo()
 
         domain = [('is_published', '=', True), ('active', '=', True)]
@@ -164,6 +166,7 @@ class BrochureCategoryQuery(graphene.ObjectType):
     @staticmethod
     def resolve_brochure_category(self, info, id=None, slug=None):
         env = info.context['env']
+        request.website = env['website'].get_current_website()
         Cat = env['brochure.category'].sudo()
         if id:
             rec = Cat.browse(id).exists()
@@ -179,6 +182,7 @@ class BrochureCategoryQuery(graphene.ObjectType):
     @staticmethod
     def resolve_brochure_categories(self, info, parent_id=None, roots_only=False):
         env = info.context['env']
+        request.website = env['website'].get_current_website()
         domain = [('is_published', '=', True)]
         if roots_only:
             domain.append(('parent_id', '=', False))

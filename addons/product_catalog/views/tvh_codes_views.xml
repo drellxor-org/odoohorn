@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tvh_availability_code_tree" model="ir.ui.view">
+        <field name="name">tvh.availability.code.tree</field>
+        <field name="model">tvh.availability.code</field>
+        <field name="arch" type="xml">
+            <tree string="Availability codes">
+                <field name="code"/>
+                <field name="description"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="tvh_availability_code_form" model="ir.ui.view">
+        <field name="name">tvh.availability.code.form</field>
+        <field name="model">tvh.availability.code</field>
+        <field name="arch" type="xml">
+            <form string="Availability code">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tvh_availability_codes" model="ir.actions.act_window">
+        <field name="name">Availability codes</field>
+        <field name="res_model">tvh.availability.code</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <record id="tvh_unit_code_tree" model="ir.ui.view">
+        <field name="name">tvh.unit.code.tree</field>
+        <field name="model">tvh.unit.code</field>
+        <field name="arch" type="xml">
+            <tree string="Unit codes">
+                <field name="code"/>
+                <field name="description"/>
+                <field name="iso_code"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="tvh_unit_code_form" model="ir.ui.view">
+        <field name="name">tvh.unit.code.form</field>
+        <field name="model">tvh.unit.code</field>
+        <field name="arch" type="xml">
+            <form string="Unit code">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="description"/>
+                        <field name="iso_code"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tvh_unit_codes" model="ir.actions.act_window">
+        <field name="name">Unit codes</field>
+        <field name="res_model">tvh.unit.code</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

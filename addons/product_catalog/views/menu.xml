@@ -1,12 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem id="menu_product_catalog_root" name="Catalog" sequence="55"/>
+
     <menuitem id="menu_product_catalog_products" name="Products" parent="menu_product_catalog_root"
-              action="action_product_template_catalog" sequence="5"/>
-    <menuitem id="menu_product_catalog_makes" name="Makes" parent="menu_product_catalog_root"
-              action="action_product_make" sequence="10"/>
+              action="action_product_template_catalog" sequence="10"/>
     <menuitem id="menu_product_catalog_applications" name="Applications" parent="menu_product_catalog_root"
               action="action_product_application" sequence="20"/>
-    <menuitem id="menu_product_catalog_sources" name="Data sources" parent="menu_product_catalog_root"
-              action="action_data_source" sequence="30"/>
+    <menuitem id="menu_product_catalog_public_categories" name="Categories" parent="menu_product_catalog_root"
+              action="website_sale.product_public_category_action" sequence="30"/>
+
+    <!-- Classifiers submenu — code tables and reference data -->
+    <menuitem id="menu_product_catalog_classifiers" name="Classifiers"
+              parent="menu_product_catalog_root" sequence="90"/>
+    <menuitem id="menu_product_catalog_makes" name="Makes" parent="menu_product_catalog_classifiers"
+              action="action_product_make" sequence="10"/>
+    <menuitem id="menu_product_catalog_sources" name="Data sources" parent="menu_product_catalog_classifiers"
+              action="action_data_source" sequence="20"/>
+    <menuitem id="menu_product_catalog_tvh_availability" name="TVH availability codes"
+              parent="menu_product_catalog_classifiers"
+              action="action_tvh_availability_codes" sequence="30"/>
+    <menuitem id="menu_product_catalog_tvh_units" name="TVH unit codes"
+              parent="menu_product_catalog_classifiers"
+              action="action_tvh_unit_codes" sequence="40"/>
 </odoo>

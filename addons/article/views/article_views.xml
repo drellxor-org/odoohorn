@@ -88,5 +88,10 @@
     <menuitem id="menu_ecommerce_etc" name="Etc" parent="website_sale.menu_ecommerce" sequence="50"/>
     <menuitem id="menu_ecommerce_etc_article" name="Articles" parent="menu_ecommerce_etc" action="article.article_action"/>
 
+    <!-- Standalone top-level entry so the menu is reachable even when the Website
+         parent is hidden via simplify_odoo. -->
+    <menuitem id="menu_articles_root" name="Articles" sequence="60"
+              action="article.article_action"/>
+
 
 </odoo>

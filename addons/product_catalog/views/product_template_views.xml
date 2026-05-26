@@ -8,7 +8,15 @@
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_form_view"/>
         <field name="arch" type="xml">
-            <xpath expr="//notebook" position="inside">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_refresh_from_tvh" type="object"
+                            string="Refresh from TVH" class="oe_highlight"
+                            attrs="{'invisible': [('data_source_id', '=', False)]}"/>
+                </header>
+            </xpath>
+            <!-- Prepend the catalog tabs so they're visible without scrolling the notebook overflow. -->
+            <xpath expr="//notebook/page[1]" position="before">
                 <page string="Catalog" name="catalog">
                     <group>
                         <group string="Source">
@@ -32,6 +40,45 @@
                             <field name="serie"/>
                             <field name="vehicle_type_code" optional="hide"/>
                             <field name="brochure_id"/>
+                        </tree>
+                    </field>
+                </page>
+                <page string="TVH" name="tvh">
+                    <group>
+                        <group string="Pricing">
+                            <field name="tvh_price" readonly="1"/>
+                            <field name="tvh_list_price" readonly="1"/>
+                            <field name="surcharge_amount" readonly="1"/>
+                            <field name="environmental_fee" readonly="1"/>
+                        </group>
+                        <group string="Stock">
+                            <field name="tvh_quantity_in_stock" readonly="1"/>
+                            <field name="availability_code_id" readonly="1"/>
+                            <field name="tvh_quantity_updated_at" readonly="1"/>
+                        </group>
+                        <group string="Identifiers">
+                            <field name="tvh_number" readonly="1"/>
+                            <field name="quality_brand" readonly="1"/>
+                            <field name="unit_code_id" readonly="1"/>
+                            <field name="stock_unit_matrix_desc" readonly="1"/>
+                        </group>
+                        <group string="Flags">
+                            <field name="is_reconditioned" readonly="1"/>
+                            <field name="is_non_returnable" readonly="1"/>
+                            <field name="is_non_cancellable" readonly="1"/>
+                            <field name="minimum_order_quantity"/>
+                            <field name="not_orderable_reason" readonly="1"/>
+                        </group>
+                        <group string="Replacement chain" colspan="2">
+                            <field name="replaced_by_id" readonly="1"/>
+                            <field name="latest_product_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <separator string="Quantity discounts"/>
+                    <field name="tvh_quantity_discount_ids" readonly="1">
+                        <tree>
+                            <field name="qty"/>
+                            <field name="price"/>
                         </tree>
                     </field>
                 </page>
@@ -83,7 +130,11 @@
         <field name="priority" eval="32"/>
         <field name="arch" type="xml">
             <form string="Product">
-                <header/>
+                <header>
+                    <button name="action_refresh_from_tvh" type="object"
+                            string="Refresh from TVH" class="oe_highlight"
+                            attrs="{'invisible': [('data_source_id', '=', False)]}"/>
+                </header>
                 <sheet>
                     <field name="image_1920" widget="image" class="oe_avatar"
                            options='{"preview_image": "image_128"}'/>
@@ -97,6 +148,7 @@
                     <group>
                         <group>
                             <field name="active" invisible="1"/>
+                            <field name="company_id" invisible="1"/>
                             <field name="type"/>
                             <field name="default_code"/>
                             <field name="make_id"/>
@@ -109,6 +161,8 @@
                             <field name="sale_ok"/>
                             <field name="purchase_ok"/>
                             <field name="data_source_id" readonly="1"/>
+                            <field name="website_slug" readonly="1"/>
+                            <field name="website_slug_override"/>
                         </group>
                     </group>
                     <notebook>
@@ -144,11 +198,55 @@
                                 </tree>
                             </field>
                         </page>
-                        <page string="Slugs" name="slugs">
+                        <page string="TVH" name="tvh">
                             <group>
-                                <field name="website_slug" readonly="1"/>
-                                <field name="website_slug_override"/>
+                                <group string="Pricing">
+                                    <field name="tvh_price" readonly="1"/>
+                                    <field name="tvh_list_price" readonly="1"/>
+                                    <field name="surcharge_amount" readonly="1"/>
+                                    <field name="environmental_fee" readonly="1"/>
+                                </group>
+                                <group string="Stock">
+                                    <field name="tvh_quantity_in_stock" readonly="1"/>
+                                    <field name="availability_code_id" readonly="1"/>
+                                    <field name="tvh_quantity_updated_at" readonly="1"/>
+                                </group>
+                                <group string="Identifiers">
+                                    <field name="tvh_number" readonly="1"/>
+                                    <field name="quality_brand" readonly="1"/>
+                                    <field name="unit_code_id" readonly="1"/>
+                                    <field name="stock_unit_matrix_desc" readonly="1"/>
+                                </group>
+                                <group string="Flags">
+                                    <field name="is_reconditioned" readonly="1"/>
+                                    <field name="is_non_returnable" readonly="1"/>
+                                    <field name="is_non_cancellable" readonly="1"/>
+                                    <field name="minimum_order_quantity"/>
+                                    <field name="not_orderable_reason" readonly="1"/>
+                                </group>
+                                <group string="Replacement chain" colspan="2">
+                                    <field name="replaced_by_id" readonly="1"/>
+                                    <field name="latest_product_id" readonly="1"/>
+                                </group>
                             </group>
+                            <separator string="Quantity discounts"/>
+                            <field name="tvh_quantity_discount_ids" readonly="1">
+                                <tree>
+                                    <field name="qty"/>
+                                    <field name="price"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Alternatives" name="alternatives">
+                            <field name="alternative_product_ids">
+                                <tree>
+                                    <field name="default_code"/>
+                                    <field name="name"/>
+                                    <field name="make_id"/>
+                                    <field name="quality_brand"/>
+                                    <field name="list_price"/>
+                                </tree>
+                            </field>
                         </page>
                         <page string="SEO" name="seo">
                             <group>
@@ -171,6 +269,16 @@
         <field name="view_mode">kanban,tree,form</field>
     </record>
 
+    <record id="action_product_template_catalog_view_kanban" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">kanban</field>
+        <field name="act_window_id" ref="action_product_template_catalog"/>
+    </record>
+    <record id="action_product_template_catalog_view_tree" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">tree</field>
+        <field name="act_window_id" ref="action_product_template_catalog"/>
+    </record>
     <record id="action_product_template_catalog_view_form" model="ir.actions.act_window.view">
         <field name="sequence" eval="3"/>
         <field name="view_mode">form</field>

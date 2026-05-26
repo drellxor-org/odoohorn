@@ -16,6 +16,14 @@ echo "MODULES_TO_UPDATE=${MODULES_TO_UPDATE}"
 echo "MODULES_TO_UNINSTALL=${MODULES_TO_UNINSTALL}"
 echo "POSTGRES_DB=${POSTGRES_DB}"
 
-exec odoo --database=${POSTGRES_DB} --init=${MODULES_TO_INIT} --update=${MODULES_TO_UPDATE} --without-demo=all
+SENTRY_ARGS=""
+if [ -n "${SENTRY_DSN}" ]; then
+    SENTRY_ARGS="--sentry_dsn=${SENTRY_DSN}"
+    [ -n "${SENTRY_ENVIRONMENT}" ] && SENTRY_ARGS="${SENTRY_ARGS} --sentry_environment=${SENTRY_ENVIRONMENT}"
+    [ -n "${SENTRY_RELEASE}" ] && SENTRY_ARGS="${SENTRY_ARGS} --sentry_release=${SENTRY_RELEASE}"
+    echo "Sentry enabled (env=${SENTRY_ENVIRONMENT:-development})"
+fi
+
+exec odoo --database=${POSTGRES_DB} --init=${MODULES_TO_INIT} --update=${MODULES_TO_UPDATE} --without-demo=all ${SENTRY_ARGS}
 
 exit 1

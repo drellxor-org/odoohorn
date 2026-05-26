@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Re-runs on every -u simplify_odoo so newly added menu names (e.g. Website
+         added after the original install) get hidden without reinstalling. -->
+    <function model="ir.ui.menu" name="simplify_deactivate_menus"/>
+</odoo>

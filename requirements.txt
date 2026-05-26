@@ -3,3 +3,4 @@ graphql-core==3.2.6
 graphql-relay==3.2.0
 graphql-server==3.0.0b7
 python-facebook-api
+sentry-sdk<=1.9.0

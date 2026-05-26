@@ -10,7 +10,7 @@ from odoo.addons.graphql_vuestorefront.schemas import (
     invoice, contact_us, user_profile, sign,
     address, wishlist, shop, payment,
     mailing_list, website, feedback, language, about, sitemap,
-    brochure,
+    brochure, objects, search,
 )
 
 
@@ -35,6 +35,7 @@ class Query(
     sitemap.SitemapQuery,
     brochure.BrochureQuery,
     brochure.BrochureCategoryQuery,
+    search.SearchQuery,
 ):
     pass
 
@@ -62,5 +63,11 @@ schema = graphene.Schema(
     types=[country.CountryList, category.CategoryList, product.ProductList, product.ProductVariantData, order.OrderList,
            invoice.InvoiceList, wishlist.WishlistData, shop.CartData, mailing_list.MailingContactList,
            mailing_list.MailingListList, brochure.BrochureList, brochure.Brochure, brochure.BrochureCategory,
-           brochure.BrochureAttachment]
+           brochure.BrochureAttachment,
+           objects.DataSource, objects.ProductMake, objects.ProductApplication,
+           objects.TvhAvailabilityCode, objects.TvhUnitCode, objects.ProductTvhQuantityDiscount,
+           product.FacetValue,
+           search.ParsedQuery, search.Suggestion,
+           search.SearchProductsSlice, search.SearchBrochuresSlice, search.SearchArticlesSlice,
+           search.SearchResult]
 )

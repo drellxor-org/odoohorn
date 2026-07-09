@@ -1,3 +1,7 @@
 /config/development/.env
 /config/development/nginx.conf
 /config/development/odoo.conf
+
+# JetBrains IDE (project + run configs — local to each dev)
+/.idea/
+/.run/

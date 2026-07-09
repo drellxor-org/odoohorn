@@ -52,7 +52,8 @@ class Mutation(
     # payment.AdyenPaymentMutation,
     # mailing_list.NewsletterSubscribeMutation,
     # order.OrderMutation,
-    feedback.FeedbackMutation
+    feedback.FeedbackMutation,
+    product.ProductMutation,
 ):
     pass
 

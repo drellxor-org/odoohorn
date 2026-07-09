@@ -10,7 +10,6 @@
       "description": "Manual testing collection for the Odoo GraphQL VSF API (brochures, products, cart).",
       "scope": "collection"
     },
-
     {
       "_id": "env_base",
       "_type": "environment",
@@ -32,10 +31,20 @@
       "name": "Local Dev",
       "data": {}
     },
-
-    { "_id": "fld_queries",   "_type": "request_group", "parentId": "wrk_silverhorn", "name": "Queries",   "metaSortKey": 1 },
-    { "_id": "fld_mutations", "_type": "request_group", "parentId": "wrk_silverhorn", "name": "Mutations", "metaSortKey": 2 },
-
+    {
+      "_id": "fld_queries",
+      "_type": "request_group",
+      "parentId": "wrk_silverhorn",
+      "name": "Queries",
+      "metaSortKey": 1
+    },
+    {
+      "_id": "fld_mutations",
+      "_type": "request_group",
+      "parentId": "wrk_silverhorn",
+      "name": "Mutations",
+      "metaSortKey": 2
+    },
     {
       "_id": "req_q_cart",
       "_type": "request",
@@ -43,14 +52,18 @@
       "name": "cart",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query Cart { cart { ... on CartData { order { id name amountTotal partner { id name email } orderLines { id name quantity product { id name defaultCode } } brochureLines { id brochureId brochureName machineSerial partNumber commentary } } } } }\",\n  \"variables\": {}\n}"
       },
       "metaSortKey": 10
     },
-
     {
       "_id": "req_q_brochure_by_id",
       "_type": "request",
@@ -58,7 +71,12 @@
       "name": "brochure (by id)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query BrochureById($id: Int!) { brochure(id: $id) { id name slug pageMessage description popularity categories { id name slug } attachments { id filename url } seoMetadata } }\",\n  \"variables\": { \"id\": 1 }\n}"
@@ -72,7 +90,12 @@
       "name": "brochure (by slug)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query BrochureBySlug($slug: String!) { brochure(slug: $slug) { id name slug pageMessage description popularity categories { id name slug } attachments { id filename url } } }\",\n  \"variables\": { \"slug\": \"replace-me\" }\n}"
@@ -86,14 +109,18 @@
       "name": "brochures (list)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query Brochures($search: String, $categoryId: Int, $pageSize: Int, $currentPage: Int) { brochures(search: $search, categoryId: $categoryId, pageSize: $pageSize, currentPage: $currentPage) { totalCount brochures { id name slug } } }\",\n  \"variables\": { \"search\": \"\", \"categoryId\": null, \"pageSize\": 20, \"currentPage\": 1 }\n}"
       },
       "metaSortKey": 40
     },
-
     {
       "_id": "req_q_brochure_category_by_id",
       "_type": "request",
@@ -101,7 +128,12 @@
       "name": "brochureCategory (by id)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query BrochureCategoryById($id: Int!) { brochureCategory(id: $id) { id name slug pageMessage parent { id name } childs { id name } brochures { id name slug } } }\",\n  \"variables\": { \"id\": 1 }\n}"
@@ -115,7 +147,12 @@
       "name": "brochureCategory (by slug)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query BrochureCategoryBySlug($slug: String!) { brochureCategory(slug: $slug) { id name slug parent { id name } childs { id name } brochures { id name } } }\",\n  \"variables\": { \"slug\": \"replace-me\" }\n}"
@@ -129,14 +166,18 @@
       "name": "brochureCategories (roots)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query BrochureCategories($rootsOnly: Boolean, $parentId: Int) { brochureCategories(rootsOnly: $rootsOnly, parentId: $parentId) { id name slug childs { id name } } }\",\n  \"variables\": { \"rootsOnly\": true, \"parentId\": null }\n}"
       },
       "metaSortKey": 70
     },
-
     {
       "_id": "req_q_product_by_id",
       "_type": "request",
@@ -144,7 +185,12 @@
       "name": "product (by id)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query ProductById($id: Int!) { product(id: $id) { id name defaultCode slug price qty isDangerousGoods make { id name code } dataSource { id code name } weightGr lengthMm widthMm heightMm applications { id model serie vehicleTypeCode make { id name } brochureId brochureName brochureSlug } tvhNumber tvhPrice tvhListPrice tvhQuantityInStock qualityBrand stockUnitMatrixDesc unitCode { id code description } availabilityCode { id code description } isReconditioned isNonReturnable isNonCancellable surchargeAmount environmentalFee minimumOrderQuantity orderable notOrderableReason tvhQuantityDiscounts { id qty price } replacedBy { id name } latestProduct { id name } } }\",\n  \"variables\": { \"id\": 1 }\n}"
@@ -158,7 +204,12 @@
       "name": "product (by slug)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query ProductBySlug($slug: String!) { product(slug: $slug) { id name defaultCode slug price make { id name code } applications { id model serie } } }\",\n  \"variables\": { \"slug\": \"replace-me\" }\n}"
@@ -172,7 +223,12 @@
       "name": "products (filter + facets)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query Products($filter: ProductFilterInput, $currentPage: Int, $pageSize: Int, $sort: ProductSortInput) { products(filter: $filter, currentPage: $currentPage, pageSize: $pageSize, sort: $sort) { ... on ProductList { totalCount minPrice maxPrice products { id name defaultCode price make { id name } } facets { makes { id name code count } families { id name count } subfamilies { id name parentId count } subsubfamilies { id name parentId count } } } } }\",\n  \"variables\": { \"filter\": { \"facets\": { \"makeIds\": [], \"familyIds\": [], \"subfamilyIds\": [], \"subsubfamilyIds\": [] } }, \"currentPage\": 1, \"pageSize\": 20, \"sort\": {} }\n}"
@@ -186,14 +242,18 @@
       "name": "products (search)",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"query ProductsSearch($search: String, $pageSize: Int, $currentPage: Int) { products(search: $search, pageSize: $pageSize, currentPage: $currentPage) { ... on ProductList { totalCount products { id name defaultCode price make { name } } } } }\",\n  \"variables\": { \"search\": \"shim\", \"pageSize\": 20, \"currentPage\": 1 }\n}"
       },
       "metaSortKey": 110
     },
-
     {
       "_id": "req_m_cart_add_item",
       "_type": "request",
@@ -201,7 +261,12 @@
       "name": "cartAddItem",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"mutation CartAddItem($productId: Int!, $quantity: Int!) { cartAddItem(productId: $productId, quantity: $quantity) { ... on CartData { order { id orderLines { id quantity product { id name defaultCode } } } } } }\",\n  \"variables\": { \"productId\": 1, \"quantity\": 1 }\n}"
@@ -215,7 +280,12 @@
       "name": "cartUpdateItem",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"mutation CartUpdateItem($lineId: Int!, $quantity: Int!) { cartUpdateItem(lineId: $lineId, quantity: $quantity) { ... on CartData { order { id orderLines { id quantity } } } } }\",\n  \"variables\": { \"lineId\": 1, \"quantity\": 2 }\n}"
@@ -229,7 +299,12 @@
       "name": "cartRemoveItem",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"mutation CartRemoveItem($lineId: Int!) { cartRemoveItem(lineId: $lineId) { ... on CartData { order { id orderLines { id } } } } }\",\n  \"variables\": { \"lineId\": 1 }\n}"
@@ -243,7 +318,12 @@
       "name": "cartClear",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"mutation CartClear { cartClear { id orderLines { id } brochureLines { id } } }\",\n  \"variables\": {}\n}"
@@ -257,7 +337,12 @@
       "name": "cartAddBrochureItem",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"mutation CartAddBrochureItem($brochureId: Int!, $machineSerial: String, $partNumber: String, $commentary: String) { cartAddBrochureItem(brochureId: $brochureId, machineSerial: $machineSerial, partNumber: $partNumber, commentary: $commentary) { ... on CartData { order { id brochureLines { id brochureId brochureName machineSerial partNumber commentary } } } } }\",\n  \"variables\": { \"brochureId\": 1, \"machineSerial\": \"MLT 1035\", \"partNumber\": \"ABC-123\", \"commentary\": \"please ship as soon as possible\" }\n}"
@@ -271,7 +356,12 @@
       "name": "cartRemoveBrochureItem",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"mutation CartRemoveBrochureItem($lineId: Int!) { cartRemoveBrochureItem(lineId: $lineId) { ... on CartData { order { id brochureLines { id } } } } }\",\n  \"variables\": { \"lineId\": 1 }\n}"
@@ -285,12 +375,36 @@
       "name": "confirmOrder",
       "method": "POST",
       "url": "{{ _.base_url }}{{ _.graphql_path }}",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/graphql",
         "text": "{\n  \"query\": \"mutation ConfirmOrder($name: String, $email: String, $phone: String, $comment: String) { confirmOrder(name: $name, email: $email, phone: $phone, comment: $comment) { done } }\",\n  \"variables\": { \"name\": \"Test Customer\", \"email\": \"test@example.com\", \"phone\": \"+1 555 0100\", \"comment\": \"\" }\n}"
       },
       "metaSortKey": 70
+    },
+    {
+      "_id": "req_m_refresh_product_tvh",
+      "_type": "request",
+      "parentId": "fld_mutations",
+      "name": "refreshProductFromTvh",
+      "method": "POST",
+      "url": "{{ _.base_url }}{{ _.graphql_path }}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/graphql",
+        "text": "{\n  \"query\": \"mutation RefreshProductFromTvh($productId: Int!) { refreshProductFromTvh(productId: $productId) { id name defaultCode price tvhPrice tvhListPrice tvhQuantityInStock qualityBrand availabilityCode { code description } replacedBy { id name } } }\",\n  \"variables\": { \"productId\": 1 }\n}"
+      },
+      "metaSortKey": 80
     }
   ]
 }

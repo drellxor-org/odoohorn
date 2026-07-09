@@ -386,3 +386,25 @@ class ProductQuery(graphene.ObjectType):
             has_discounted_price=variant_info['has_discounted_price'],
             is_combination_possible=variant_info['is_combination_possible']
         )
+
+
+class RefreshProductFromTvh(graphene.Mutation):
+    class Arguments:
+        product_id = graphene.Int(required=True)
+
+    Output = Product
+
+    @staticmethod
+    def mutate(self, info, product_id):
+        env = info.context["env"]
+        request.website = env["website"].get_current_website()
+        product = env["product.template"].sudo().browse(product_id).exists()
+        if not product:
+            raise GraphQLError(f"Product {product_id} not found")
+        env["tvh.service"].refresh_product(product)
+        return product
+
+
+class ProductMutation(graphene.ObjectType):
+    refresh_product_from_tvh = RefreshProductFromTvh.Field(
+        description="Fetch fresh price / stock / alternatives / replacement info from the TVH inquiry API and apply to the product template.")

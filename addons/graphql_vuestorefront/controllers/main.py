@@ -40,13 +40,13 @@ class VSFBinary(Binary):
                 auth="public")
     def content_image(self, xmlid=None, model='ir.attachment', id=None, field='datas',
                       filename_field='name', unique=None, filename=None, mimetype=None,
-                      download=None, width=0, height=0, crop=False, access_token=None,
+                      download=0, width=0, height=0, crop=False, access_token=None,
                       **kwargs):
         """ Validate width and height """
         try:
             ICP = request.env['ir.config_parameter'].sudo()
             vsf_image_resize_limit = int(ICP.get_param('vsf_image_resize_limit', 1920))
-            
+
             if width > vsf_image_resize_limit or height > vsf_image_resize_limit:
                 return request.not_found()
         except Exception:

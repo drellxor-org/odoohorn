@@ -126,41 +126,36 @@ class confirmPayment(graphene.Mutation):
         if not order:
             raise GraphQLError(_('No active cart found.'))
 
-        tx = order.get_portal_last_transaction()
+        public_partner = website.sudo().user_id.sudo().partner_id
+        has_real_partner = order.partner_id and order.partner_id.id != public_partner.id
 
-        if not order.amount_total and not tx:
-            public_partner = website.sudo().user_id.sudo().partner_id
-            has_real_partner = order.partner_id and order.partner_id.id != public_partner.id
-
-            if has_real_partner:
-                pass  # partner already set via createUpdatePartner, use as-is
-            elif name and email:
-                partner = env['res.partner'].search([('email', '=', email)], limit=1)
-                if partner:
-                    partner.write({'name': name, 'phone': phone, 'comment': comment})
-                else:
-                    partner = env['res.partner'].sudo().create({
-                        'name': name,
-                        'email': email,
-                        'phone': phone,
-                        'comment': comment,
-                    })
-                order.write({
-                    'partner_id': partner.id,
-                    'partner_invoice_id': partner.id,
-                    'partner_shipping_id': partner.id,
-                })
+        if has_real_partner:
+            pass  # partner already set via createUpdatePartner, use as-is
+        elif name and email:
+            partner = env['res.partner'].search([('email', '=', email)], limit=1)
+            if partner:
+                partner.write({'name': name, 'phone': phone, 'comment': comment})
             else:
-                raise GraphQLError(_('Customer information is required before confirming the order.'))
+                partner = env['res.partner'].sudo().create({
+                    'name': name,
+                    'email': email,
+                    'phone': phone,
+                    'comment': comment,
+                })
+            order.write({
+                'partner_id': partner.id,
+                'partner_invoice_id': partner.id,
+                'partner_shipping_id': partner.id,
+            })
+        else:
+            raise GraphQLError(_('Customer information is required before confirming the order.'))
 
-            # Move the quotation to "Quotation Sent" rather than confirming it as a sale,
-            # so the salesperson reviews / accepts it before fulfilment.
-            order.sudo().action_quotation_sent()
-            # Still notify the customer + the company (mail template lives in order_product_info).
-            order.sudo()._send_order_confirmation_mail()
-            return confirmPayment(done=True)
-
-        return confirmPayment(done=False)
+        # Move the quotation to "Quotation Sent" rather than confirming it as a sale,
+        # so the salesperson reviews / accepts it before fulfilment.
+        order.sudo().action_quotation_sent()
+        # Still notify the customer + the company (mail template lives in order_product_info).
+        order.sudo()._send_order_confirmation_mail()
+        return confirmPayment(done=True)
 
 
 class PaymentMutation(graphene.ObjectType):

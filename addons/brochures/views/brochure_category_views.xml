@@ -19,6 +19,7 @@
         <field name="arch" type="xml">
             <form string="Brochure Category">
                 <sheet>
+                    <field name="image_1920" widget="image" class="oe_avatar"/>
                     <group>
                         <group>
                             <field name="name"/>

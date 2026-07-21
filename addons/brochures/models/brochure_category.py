@@ -5,7 +5,7 @@ from odoo.addons.http_routing.models.ir_http import slugify
 class BrochureCategory(models.Model):
     _name = 'brochure.category'
     _description = 'Brochure Category'
-    _inherit = ['website.seo.metadata', 'website.published.mixin']
+    _inherit = ['image.mixin', 'website.seo.metadata', 'website.published.mixin']
     _parent_name = 'parent_id'
     _parent_store = True
     _rec_name = 'complete_name'

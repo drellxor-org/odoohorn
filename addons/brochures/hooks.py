@@ -22,6 +22,7 @@ _BROCHURE_FIELDS_FROM_PRODUCT = (
 _BROCHURE_CATEGORY_FIELDS_FROM_PUBLIC_CATEGORY = (
     'name',
     'sequence',
+    'image_1920',
     'page_message',
     'website_meta_title',
     'website_meta_description',

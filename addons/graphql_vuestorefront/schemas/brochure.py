@@ -25,6 +25,10 @@ class BrochureCategory(OdooObjectType):
     json_ld = generic.GenericScalar()
     seo_metadata = generic.GenericScalar()
     brochures = graphene.List(graphene.NonNull(lambda: Brochure))
+    image = graphene.String()
+    small_image = graphene.String()
+    image_filename = graphene.String()
+    thumbnail = graphene.String()
 
     def resolve_parent(self, info):
         return self.parent_id or None
@@ -43,6 +47,18 @@ class BrochureCategory(OdooObjectType):
 
     def resolve_seo_metadata(self, info):
         return self.get_website_meta() or None
+
+    def resolve_image(self, info):
+        return f'/web/image/brochure.category/{self.id}/image_1920'
+
+    def resolve_small_image(self, info):
+        return f'/web/image/brochure.category/{self.id}/image_128'
+
+    def resolve_thumbnail(self, info):
+        return f'/web/image/brochure.category/{self.id}/image_512'
+
+    def resolve_image_filename(self, info):
+        return slugify(self.name or '')
 
 
 class BrochureAttachment(OdooObjectType):

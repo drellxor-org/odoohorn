@@ -107,24 +107,38 @@ class PaymentQuery(graphene.ObjectType):
         raise GraphQLError(_('Cart does not exist'))
 
 
+class BrochureLineInput(graphene.InputObjectType):
+    brochure_id = graphene.Int()
+    make = graphene.String()
+    machine_serial = graphene.String()
+    part_number = graphene.String()
+    description = graphene.String()
+    commentary = graphene.String()
+    quantity = graphene.Int()
+
+
 class confirmPayment(graphene.Mutation):
     class Arguments:
         name = graphene.String()
         email = graphene.String()
         phone = graphene.String()
         comment = graphene.String()
+        brochure_lines = graphene.List(BrochureLineInput)
 
     done = graphene.Boolean()
 
     @staticmethod
-    def mutate(self, info, name=None, email=None, phone=None, comment=None):
+    def mutate(self, info, name=None, email=None, phone=None, comment=None, brochure_lines=None):
         env = info.context["env"]
         website = env['website'].get_current_website()
         request.website = website
-        order = website.sale_get_order()
+        # Force-create the cart if it doesn't exist yet — a brochure-only enquiry
+        # can arrive here without any sale.order.line ever having been added.
+        order = website.sale_get_order(force_create=1)
+        order.write({'website_id': website.id})
 
-        if not order:
-            raise GraphQLError(_('No active cart found.'))
+        if not brochure_lines and not order.order_line:
+            raise GraphQLError(_('Cart is empty.'))
 
         public_partner = website.sudo().user_id.sudo().partner_id
         has_real_partner = order.partner_id and order.partner_id.id != public_partner.id
@@ -149,6 +163,21 @@ class confirmPayment(graphene.Mutation):
             })
         else:
             raise GraphQLError(_('Customer information is required before confirming the order.'))
+
+        if brochure_lines:
+            BrochureLine = env['sale.order.brochure.line'].sudo()
+            for bl in brochure_lines:
+                vals = {
+                    'order_id': order.id,
+                    'brochure_id': bl.get('brochure_id') or False,
+                    'make': bl.get('make'),
+                    'machine_serial': bl.get('machine_serial'),
+                    'part_number': bl.get('part_number'),
+                    'name': bl.get('description'),
+                    'commentary': bl.get('commentary'),
+                    'quantity': bl.get('quantity') or 1,
+                }
+                BrochureLine.create(vals)
 
         # Move the quotation to "Quotation Sent" rather than confirming it as a sale,
         # so the salesperson reviews / accepts it before fulfilment.

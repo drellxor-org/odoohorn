@@ -7,10 +7,12 @@ class SaleOrderBrochureLine(models.Model):
     _order = 'order_id, sequence, id'
 
     order_id = fields.Many2one('sale.order', 'Order', required=True, ondelete='cascade', index=True)
-    brochure_id = fields.Many2one('brochure', 'Brochure', required=True, ondelete='restrict')
+    brochure_id = fields.Many2one('brochure', 'Brochure', ondelete='restrict')
     name = fields.Char('Description')
     sequence = fields.Integer('Sequence', default=10)
 
-    machine_serial = fields.Char('Machine Serial')
+    make = fields.Char('Make')
+    machine_serial = fields.Char('Model or Serial')
     part_number = fields.Char('Part Number')
     commentary = fields.Char('Commentary')
+    quantity = fields.Integer('Quantity', default=1)

@@ -767,9 +767,11 @@ class OrderLine(OdooObjectType):
 class OrderBrochureLine(OdooObjectType):
     id = graphene.Int(required=True)
     name = graphene.String()
+    make = graphene.String()
     machine_serial = graphene.String()
     part_number = graphene.String()
     commentary = graphene.String()
+    quantity = graphene.Int()
     brochure_id = graphene.Int()
     brochure_name = graphene.String()
     brochure_slug = graphene.String()

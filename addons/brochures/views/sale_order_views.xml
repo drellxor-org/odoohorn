@@ -14,10 +14,12 @@
                     <tree editable="bottom">
                         <field name="sequence" widget="handle"/>
                         <field name="brochure_id"/>
-                        <field name="name"/>
+                        <field name="make"/>
                         <field name="machine_serial"/>
                         <field name="part_number"/>
+                        <field name="name"/>
                         <field name="commentary"/>
+                        <field name="quantity"/>
                     </tree>
                 </field>
             </xpath>

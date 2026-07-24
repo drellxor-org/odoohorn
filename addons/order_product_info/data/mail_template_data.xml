@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
         <record id="sale.mail_template_sale_confirmation" model="mail.template">
             <field name="name">Sales: Order Confirmation</field>
             <field name="model_id" ref="sale.model_sale_order"/>
@@ -23,51 +23,76 @@
         </t>
         <br/><br/>
     </p>
-<t t-if="hasattr(object, 'website_id') and object.website_id">
-    <div style="margin: 0px; padding: 0px;">
-        <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
-            <tr style="border-bottom: 2px solid #dee2e6;">
-                <td style="width: 150px;"><span style="font-weight:bold;">Products</span></td>
-                <td></td>
-                <td width="15%" align="center"><span style="font-weight:bold;">Quantity</span></td>
-                <td width="20%" align="center"><span style="font-weight:bold;">Machine serial</span></td>
-                <td width="20%" align="center"><span style="font-weight:bold;">Part number</span></td>
-                <td width="20%" align="center"><span style="font-weight:bold;">Commentary</span></td>
-            </tr>
-        </table>
-        <t t-foreach="object.order_line" t-as="line">
-            <t t-if="(not hasattr(line, 'is_delivery') or not line.is_delivery) and line.display_type in ['line_section', 'line_note']">
+    <t t-set="products" t-value="object.order_line.filtered(lambda l: (not hasattr(l, 'is_delivery') or not l.is_delivery))"/>
+    <t t-set="parts" t-value="object.brochure_line_ids if hasattr(object, 'brochure_line_ids') else []"/>
+
+    <t t-if="products">
+        <div style="margin: 0px 0px 20px 0px; padding: 0px;">
+            <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
+                <tr style="border-bottom: 2px solid #dee2e6;">
+                    <td><span style="font-weight:bold;">Products</span></td>
+                    <td width="15%" align="center"><span style="font-weight:bold;">Quantity</span></td>
+                </tr>
+            </table>
+            <t t-foreach="products" t-as="line">
                 <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
                     <t t-set="loop_cycle_number" t-value="loop_cycle_number or 0" />
                     <tr t-att-style="'background-color: #f2f2f2' if loop_cycle_number % 2 == 0 else 'background-color: #ffffff'">
                         <t t-set="loop_cycle_number" t-value="loop_cycle_number + 1" />
-                        <td colspan="4">
-                            <t t-if="line.display_type == 'line_section'">
-                                <span style="font-weight:bold;" t-out="line.name or ''">Taking care of Trees Course</span>
+                        <t t-if="line.display_type == 'line_section'">
+                            <td colspan="2"><span style="font-weight:bold;" t-out="line.name or ''"/></td>
+                        </t>
+                        <t t-elif="line.display_type == 'line_note'">
+                            <td colspan="2"><i t-out="line.name or ''"/></td>
+                        </t>
+                        <t t-else="">
+                            <td align="left" t-out="line.product_id.name or ''"/>
+                            <td width="15%" align="center" t-out="line.product_uom_qty or ''"/>
+                        </t>
+                    </tr>
+                </table>
+            </t>
+        </div>
+    </t>
+
+    <t t-if="parts">
+        <t t-set="base_url" t-value="object.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''"/>
+        <div style="margin: 0px; padding: 0px;">
+            <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
+                <tr style="border-bottom: 2px solid #dee2e6;">
+                    <td><span style="font-weight:bold;">Brochure</span></td>
+                    <td align="center"><span style="font-weight:bold;">Make</span></td>
+                    <td align="center"><span style="font-weight:bold;">Model / Serial</span></td>
+                    <td align="center"><span style="font-weight:bold;">Part number</span></td>
+                    <td align="center"><span style="font-weight:bold;">Description</span></td>
+                    <td align="center"><span style="font-weight:bold;">Commentary</span></td>
+                    <td width="10%" align="center"><span style="font-weight:bold;">Quantity</span></td>
+                </tr>
+            </table>
+            <t t-foreach="parts" t-as="part">
+                <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
+                    <t t-set="parts_cycle" t-value="parts_cycle or 0" />
+                    <tr t-att-style="'background-color: #f2f2f2' if parts_cycle % 2 == 0 else 'background-color: #ffffff'">
+                        <t t-set="parts_cycle" t-value="parts_cycle + 1" />
+                        <td align="left">
+                            <t t-if="part.brochure_id">
+                                <a t-att-href="base_url + (part.brochure_id.website_slug or '')" t-out="part.brochure_id.name or ''"/>
                             </t>
-                            <t t-elif="line.display_type == 'line_note'">
-                                <i t-out="line.name or ''">Taking care of Trees Course</i>
+                            <t t-else="">
+                                <span t-out="''"/>
                             </t>
                         </td>
+                        <td align="center" t-out="part.make or ''"/>
+                        <td align="center" t-out="part.machine_serial or ''"/>
+                        <td align="center" t-out="part.part_number or ''"/>
+                        <td align="center" t-out="part.name or ''"/>
+                        <td align="center" t-out="part.commentary or ''"/>
+                        <td width="10%" align="center" t-out="part.quantity or ''"/>
                     </tr>
                 </table>
             </t>
-            <t t-elif="(not hasattr(line, 'is_delivery') or not line.is_delivery)">
-                <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
-                    <t t-set="loop_cycle_number" t-value="loop_cycle_number or 0" />
-                    <tr t-att-style="'background-color: #f2f2f2' if loop_cycle_number % 2 == 0 else 'background-color: #ffffff'">
-                        <t t-set="loop_cycle_number" t-value="loop_cycle_number + 1" />
-                        <td align="left" t-out="line.product_id.name or ''">	Taking care of Trees Course</td>
-                        <td width="15%" align="center" t-out="line.product_uom_qty or ''">1</td>
-                        <td width="20%" align="center" t-out="line.machine_serial">None</td>
-                        <td width="20%" align="center" t-out="line.part_number">None</td>
-                        <td width="20%" align="center" t-out="line.commentary">None</td>
-                    </tr>
-                </table>
-            </t>
-        </t>
-    </div>
-</t>
+        </div>
+    </t>
 </div></field>
             <field name="report_template"/>
             <field name="report_name">{{ (object.name or '').replace('/','_') }}</field>
@@ -84,73 +109,90 @@
             <field name="email_to">{{ object.company_id.email_formatted }}</field>
             <field name="description">Sent to myself on order confirmation</field>
             <field name="body_html" type="html">
-                <html>
-                    <body>
-                        <tbody>
-                            <div style="margin: 0px; padding: 0px;">
-                                <p style="margin: 0px; padding: 0px; font-size: 12px;">
-                                    New order! <br/><br/>
-                                    Name: <t t-out="object.partner_id.name"><br/></t><br/>
-                                    Email: <t t-out="object.partner_id.email"><br/></t><br/>
-                                    Phone: <t t-out="object.partner_id.phone"><br/></t><br/>
-                                    Commentary: <t t-out="object.partner_id.comment"><br/></t><br/>
+<div style="margin: 0px; padding: 0px;">
+    <p style="margin: 0px; padding: 0px; font-size: 12px;">
+        New order!<br/><br/>
+        Name: <t t-out="object.partner_id.name"/><br/>
+        Email: <t t-out="object.partner_id.email"/><br/>
+        Phone: <t t-out="object.partner_id.phone"/><br/>
+        Commentary: <t t-out="object.partner_id.comment"/><br/>
+        <t t-if="not is_html_empty(object.user_id.signature)">
+            <br/><br/>
+            <t t-out="object.user_id.signature or ''">--<br/>Mitchell Admin</t>
+        </t>
+        <br/><br/>
+    </p>
+    <t t-set="products" t-value="object.order_line.filtered(lambda l: (not hasattr(l, 'is_delivery') or not l.is_delivery))"/>
+    <t t-set="parts" t-value="object.brochure_line_ids if hasattr(object, 'brochure_line_ids') else []"/>
 
-                                    <t t-if="not is_html_empty(object.user_id.signature)">
-                                        <br/><br/>
-                                        <t t-out="object.user_id.signature or ''">--<br/>Mitchell Admin</t>
-                                    </t>
-                                    <br/><br/>
-                                </p>
-                            <t t-if="hasattr(object, 'website_id') and object.website_id">
-                                <div style="margin: 0px; padding: 0px;">
-                                    <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
-                                        <tr style="border-bottom: 2px solid #dee2e6;">
-                                            <td style="width: 150px;"><span style="font-weight:bold;">Products</span></td>
-                                            <td></td>
-                                            <td width="15%" align="center"><span style="font-weight:bold;">Quantity</span></td>
-                                            <td width="20%" align="center"><span style="font-weight:bold;">Machine serial</span></td>
-                                            <td width="20%" align="center"><span style="font-weight:bold;">Part number</span></td>
-                                            <td width="20%" align="center"><span style="font-weight:bold;">Commentary</span></td>
-                                        </tr>
-                                    </table>
-                                    <t t-foreach="object.order_line" t-as="line">
-                                        <t t-if="(not hasattr(line, 'is_delivery') or not line.is_delivery) and line.display_type in ['line_section', 'line_note']">
-                                            <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
-                                                <t t-set="loop_cycle_number" t-value="loop_cycle_number or 0" />
-                                                <tr t-att-style="'background-color: #f2f2f2' if loop_cycle_number % 2 == 0 else 'background-color: #ffffff'">
-                                                    <t t-set="loop_cycle_number" t-value="loop_cycle_number + 1" />
-                                                    <td colspan="4">
-                                                        <t t-if="line.display_type == 'line_section'">
-                                                            <span style="font-weight:bold;" t-out="line.name or ''">Taking care of Trees Course</span>
-                                                        </t>
-                                                        <t t-elif="line.display_type == 'line_note'">
-                                                            <i t-out="line.name or ''">Taking care of Trees Course</i>
-                                                        </t>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </t>
-                                        <t t-elif="(not hasattr(line, 'is_delivery') or not line.is_delivery)">
-                                            <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
-                                                <t t-set="loop_cycle_number" t-value="loop_cycle_number or 0" />
-                                                <tr t-att-style="'background-color: #f2f2f2' if loop_cycle_number % 2 == 0 else 'background-color: #ffffff'">
-                                                    <t t-set="loop_cycle_number" t-value="loop_cycle_number + 1" />
-                                                    <td align="left" t-out="line.product_id.name or ''">	Taking care of Trees Course</td>
-                                                    <td width="15%" align="center" t-out="line.product_uom_qty or ''">1</td>
-                                                    <td width="20%" align="center" t-out="line.machine_serial">None</td>
-                                                    <td width="20%" align="center" t-out="line.part_number">None</td>
-                                                    <td width="20%" align="center" t-out="line.commentary">None</td>
-                                                </tr>
-                                            </table>
-                                        </t>
-                                    </t>
-                                </div>
+    <t t-if="products">
+        <div style="margin: 0px 0px 20px 0px; padding: 0px;">
+            <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
+                <tr style="border-bottom: 2px solid #dee2e6;">
+                    <td><span style="font-weight:bold;">Products</span></td>
+                    <td width="15%" align="center"><span style="font-weight:bold;">Quantity</span></td>
+                </tr>
+            </table>
+            <t t-foreach="products" t-as="line">
+                <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
+                    <t t-set="loop_cycle_number" t-value="loop_cycle_number or 0" />
+                    <tr t-att-style="'background-color: #f2f2f2' if loop_cycle_number % 2 == 0 else 'background-color: #ffffff'">
+                        <t t-set="loop_cycle_number" t-value="loop_cycle_number + 1" />
+                        <t t-if="line.display_type == 'line_section'">
+                            <td colspan="2"><span style="font-weight:bold;" t-out="line.name or ''"/></td>
+                        </t>
+                        <t t-elif="line.display_type == 'line_note'">
+                            <td colspan="2"><i t-out="line.name or ''"/></td>
+                        </t>
+                        <t t-else="">
+                            <td align="left" t-out="line.product_id.name or ''"/>
+                            <td width="15%" align="center" t-out="line.product_uom_qty or ''"/>
+                        </t>
+                    </tr>
+                </table>
+            </t>
+        </div>
+    </t>
+
+    <t t-if="parts">
+        <t t-set="base_url" t-value="object.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''"/>
+        <div style="margin: 0px; padding: 0px;">
+            <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
+                <tr style="border-bottom: 2px solid #dee2e6;">
+                    <td><span style="font-weight:bold;">Brochure</span></td>
+                    <td align="center"><span style="font-weight:bold;">Make</span></td>
+                    <td align="center"><span style="font-weight:bold;">Model / Serial</span></td>
+                    <td align="center"><span style="font-weight:bold;">Part number</span></td>
+                    <td align="center"><span style="font-weight:bold;">Description</span></td>
+                    <td align="center"><span style="font-weight:bold;">Commentary</span></td>
+                    <td width="10%" align="center"><span style="font-weight:bold;">Quantity</span></td>
+                </tr>
+            </table>
+            <t t-foreach="parts" t-as="part">
+                <table width="100%" style="color: #454748; font-size: 12px; border-collapse: collapse;">
+                    <t t-set="parts_cycle" t-value="parts_cycle or 0" />
+                    <tr t-att-style="'background-color: #f2f2f2' if parts_cycle % 2 == 0 else 'background-color: #ffffff'">
+                        <t t-set="parts_cycle" t-value="parts_cycle + 1" />
+                        <td align="left">
+                            <t t-if="part.brochure_id">
+                                <a t-att-href="base_url + (part.brochure_id.website_slug or '')" t-out="part.brochure_id.name or ''"/>
                             </t>
-                        </div>
-                    </tbody>
-                </body>
-            </html>
-            </field>
+                            <t t-else="">
+                                <span t-out="''"/>
+                            </t>
+                        </td>
+                        <td align="center" t-out="part.make or ''"/>
+                        <td align="center" t-out="part.machine_serial or ''"/>
+                        <td align="center" t-out="part.part_number or ''"/>
+                        <td align="center" t-out="part.name or ''"/>
+                        <td align="center" t-out="part.commentary or ''"/>
+                        <td width="10%" align="center" t-out="part.quantity or ''"/>
+                    </tr>
+                </table>
+            </t>
+        </div>
+    </t>
+</div></field>
             <field name="report_template"/>
             <field name="report_name">{{ (object.name or '').replace('/','_') }}</field>
             <field name="lang">{{ object.partner_id.lang }}</field>

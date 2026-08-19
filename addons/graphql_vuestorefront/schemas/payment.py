@@ -120,15 +120,14 @@ class BrochureLineInput(graphene.InputObjectType):
 class confirmPayment(graphene.Mutation):
     class Arguments:
         name = graphene.String()
-        email = graphene.String()
-        phone = graphene.String()
+        contact = graphene.String(description='Email address or phone number')
         comment = graphene.String()
         brochure_lines = graphene.List(BrochureLineInput)
 
     done = graphene.Boolean()
 
     @staticmethod
-    def mutate(self, info, name=None, email=None, phone=None, comment=None, brochure_lines=None):
+    def mutate(self, info, name=None, contact=None, comment=None, brochure_lines=None):
         env = info.context["env"]
         website = env['website'].get_current_website()
         request.website = website
@@ -145,24 +144,23 @@ class confirmPayment(graphene.Mutation):
 
         if has_real_partner:
             pass  # partner already set via createUpdatePartner, use as-is
-        elif name and email:
-            partner = env['res.partner'].search([('email', '=', email)], limit=1)
+        elif name and contact:
+            contact = contact.strip()
+            is_email = '@' in contact
+            field = 'email' if is_email else 'phone'
+            partner = env['res.partner'].search([(field, '=', contact)], limit=1)
+            vals = {'name': name, field: contact, 'comment': comment}
             if partner:
-                partner.write({'name': name, 'phone': phone, 'comment': comment})
+                partner.write(vals)
             else:
-                partner = env['res.partner'].sudo().create({
-                    'name': name,
-                    'email': email,
-                    'phone': phone,
-                    'comment': comment,
-                })
+                partner = env['res.partner'].sudo().create(vals)
             order.write({
                 'partner_id': partner.id,
                 'partner_invoice_id': partner.id,
                 'partner_shipping_id': partner.id,
             })
         else:
-            raise GraphQLError(_('Customer information is required before confirming the order.'))
+            raise GraphQLError(_('Customer name and contact (email or phone) are required.'))
 
         if brochure_lines:
             BrochureLine = env['sale.order.brochure.line'].sudo()
@@ -184,6 +182,16 @@ class confirmPayment(graphene.Mutation):
         order.sudo().action_quotation_sent()
         # Still notify the customer + the company (mail template lives in order_product_info).
         order.sudo()._send_order_confirmation_mail()
+
+        # Detach the cart from the session so the next confirmPayment (or any cart
+        # mutation) creates a fresh order instead of reusing this 'sent' one.
+        request.session.pop('sale_order_id', None)
+        request.session.pop('website_sale_cart_quantity', None)
+        partner = order.partner_id
+        public_partner = website.sudo().user_id.sudo().partner_id
+        if partner and partner.id != public_partner.id and partner.last_website_so_id == order:
+            partner.sudo().write({'last_website_so_id': False})
+
         return confirmPayment(done=True)
 
 

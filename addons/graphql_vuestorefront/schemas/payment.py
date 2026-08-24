@@ -121,13 +121,14 @@ class confirmPayment(graphene.Mutation):
     class Arguments:
         name = graphene.String()
         contact = graphene.String(description='Email address or phone number')
+        country = graphene.String(description='Country of delivery: ISO 2-letter code (e.g. "GB") or numeric id')
         comment = graphene.String()
         brochure_lines = graphene.List(BrochureLineInput)
 
     done = graphene.Boolean()
 
     @staticmethod
-    def mutate(self, info, name=None, contact=None, comment=None, brochure_lines=None):
+    def mutate(self, info, name=None, contact=None, country=None, comment=None, brochure_lines=None):
         env = info.context["env"]
         website = env['website'].get_current_website()
         request.website = website
@@ -142,14 +143,26 @@ class confirmPayment(graphene.Mutation):
         public_partner = website.sudo().user_id.sudo().partner_id
         has_real_partner = order.partner_id and order.partner_id.id != public_partner.id
 
+        country_id = False
+        if country:
+            country = country.strip()
+            domain = [('id', '=', int(country))] if country.isdigit() \
+                else [('code', '=ilike', country)]
+            country_rec = env['res.country'].sudo().search(domain, limit=1)
+            if country_rec:
+                country_id = country_rec.id
+
         if has_real_partner:
-            pass  # partner already set via createUpdatePartner, use as-is
+            if country_id and order.partner_id.country_id.id != country_id:
+                order.partner_id.sudo().write({'country_id': country_id})
         elif name and contact:
             contact = contact.strip()
             is_email = '@' in contact
             field = 'email' if is_email else 'phone'
             partner = env['res.partner'].search([(field, '=', contact)], limit=1)
             vals = {'name': name, field: contact, 'comment': comment}
+            if country_id:
+                vals['country_id'] = country_id
             if partner:
                 partner.write(vals)
             else:

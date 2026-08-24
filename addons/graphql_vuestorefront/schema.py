@@ -17,7 +17,7 @@ from odoo.addons.graphql_vuestorefront.schemas import (
 class Query(
     OdooObjectType,
     article.ArticleQuery,
-    # country.CountryQuery,
+    country.CountryQuery,
     category.CategoryQuery,
     product.ProductQuery,
     # order.OrderQuery,

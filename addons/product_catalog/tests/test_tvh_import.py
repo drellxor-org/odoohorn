@@ -95,8 +95,9 @@ class TestTvhImport(TransactionCase):
                        '<row r="2"><c r="A2" t="s"><v>3</v></c><c r="B2" t="s"><v>4</v></c>'
                        '<c r="C2"><v>12.345</v></c></row></sheetData></worksheet>')
         self.importer._import_prices(path)
-        self.assertEqual(a1.tvh_price, 12.35)
+        self.assertEqual((a1.tvh_price, a1.list_price), (12.35, 12.35))
 
         a1.tvh_price = 11.0  # manual "Refresh from TVH"
         self.importer._import_prices(path)
         self.assertEqual(a1.tvh_price, 11.0, 'same file must not undo a manual refresh')
+        self.assertEqual(a1.list_price, 11.0, 'shop price follows tvh_price')

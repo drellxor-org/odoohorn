@@ -427,8 +427,11 @@ class TvhImport(models.AbstractModel):
 
     def _import_prices(self, path):
         """Apply the price file to tvh_price only where the file's own value changed, so a
-        manual "Refresh from TVH" (newer, live price) survives re-reading the same file."""
-        products = self._products('tvh_pricefile_price')
+        manual "Refresh from TVH" (newer, live price) survives re-reading the same file.
+
+        list_price (shop price) is kept at tvh_price, falling back to the file price; the
+        markup is applied by Odoo pricelists."""
+        products = self._products('tvh_pricefile_price', 'tvh_price', 'list_price')
         Tmpl = self.env['product.template'].sudo()
         updated = 0
         for r in read_xlsx(path):
@@ -436,9 +439,17 @@ class TvhImport(models.AbstractModel):
             product = products.get((r.get('Make'), r.get('Partno')))
             if not (price_col and product and r[price_col]):
                 continue
+            product_id, file_price, tvh_price, list_price = product
             price = round(to_float(r[price_col]), 2)
-            if product[1] != price:
-                Tmpl.browse(product[0]).write({'tvh_price': price, 'tvh_pricefile_price': price})
+            vals = {}
+            if file_price != price:
+                vals = {'tvh_price': price, 'tvh_pricefile_price': price}
+                tvh_price = price
+            # list_price is a numeric column (Decimal from SQL); compare as rounded floats
+            if round(float(list_price or 0), 2) != round(tvh_price or price, 2):
+                vals['list_price'] = tvh_price or price
+            if vals:
+                Tmpl.browse(product_id).write(vals)
                 updated += 1
         _logger.info('[tvh import] prices: %s updated', updated)
 

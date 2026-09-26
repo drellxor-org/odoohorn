@@ -164,12 +164,13 @@ class TvhService(models.AbstractModel):
         avail = self._upsert_availability_code(line.get('availabilityCode'))
         unit = self._upsert_unit_code(line.get('unitCode'), line.get('isoUnitCode'))
 
-        list_price = line.get('listPrice')
+        price = line.get('price') or 0.0
         vals = {
             'tvh_number': line.get('tvhNumber') or False,
-            'tvh_price': line.get('price') or 0.0,
-            'tvh_list_price': list_price or 0.0,
-            'list_price': list_price if list_price is not None else (line.get('price') or 0.0),
+            'tvh_price': price,
+            'tvh_list_price': line.get('listPrice') or 0.0,
+            # Shop price follows our purchase price; the markup comes from Odoo pricelists.
+            'list_price': price or product.tvh_pricefile_price or 0.0,
             # tvh_quantity_in_stock is intentionally NOT touched here — it's owned by
             # the daily Stockfile importer.
             'tvh_quantity_updated_at': fields.Datetime.now(),

@@ -127,7 +127,8 @@ extend type Product {
   # TVH
   tvhNumber: Int
   tvhPrice: Float; tvhListPrice: Float
-  tvhQuantityInStock: String    # was Float
+  tvhQuantityInStock: String    # was Float — UK warehouse, from the daily TVH stock file
+  tvhQuantityInStockBe: String  # BE warehouse, same "NO"/"1".."+10" convention
   tvhQuantityUpdatedAt: String
   qualityBrand: String
   unitCode: TvhUnitCode
@@ -158,6 +159,8 @@ type ProductApplication {
   make: ProductMake
   model: String; serie: String
   vehicleTypeCode: String
+  vehicleBrand: String
+  engineBrand: String; engineSeries: String; engineModel: String
   brochureId: Int; brochureName: String; brochureSlug: String
 }
 ```

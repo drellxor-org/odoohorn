@@ -52,6 +52,36 @@
                             </div>
                         </div>
                     </div>
+                    <h2>TVH FTPS (daily import)</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="tvh_ftp_host"/>
+                                <div class="text-muted">
+                                    Explicit FTPS (port 21). Only whitelisted from the production server.
+                                </div>
+                                <field name="tvh_ftp_host"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="tvh_ftp_folder"/>
+                                <field name="tvh_ftp_folder"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="tvh_ftp_user"/>
+                                <field name="tvh_ftp_user"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="tvh_ftp_password"/>
+                                <field name="tvh_ftp_password" password="True"/>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </xpath>
         </field>

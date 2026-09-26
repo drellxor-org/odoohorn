@@ -38,7 +38,10 @@
                             <field name="make_id"/>
                             <field name="model"/>
                             <field name="serie"/>
+                            <field name="vehicle_brand" optional="hide"/>
                             <field name="vehicle_type_code" optional="hide"/>
+                            <field name="engine_brand" optional="hide"/>
+                            <field name="engine_model" optional="hide"/>
                             <field name="brochure_id"/>
                         </tree>
                     </field>
@@ -47,12 +50,14 @@
                     <group>
                         <group string="Pricing">
                             <field name="tvh_price" readonly="1"/>
+                            <field name="tvh_pricefile_price"/>
                             <field name="tvh_list_price" readonly="1"/>
                             <field name="surcharge_amount" readonly="1"/>
                             <field name="environmental_fee" readonly="1"/>
                         </group>
                         <group string="Stock">
                             <field name="tvh_quantity_in_stock" readonly="1"/>
+                            <field name="tvh_quantity_in_stock_be" readonly="1"/>
                             <field name="availability_code_id" readonly="1"/>
                             <field name="tvh_quantity_updated_at" readonly="1"/>
                         </group>
@@ -193,7 +198,10 @@
                                     <field name="make_id"/>
                                     <field name="model"/>
                                     <field name="serie"/>
+                                    <field name="vehicle_brand" optional="hide"/>
                                     <field name="vehicle_type_code" optional="hide"/>
+                                    <field name="engine_brand" optional="hide"/>
+                                    <field name="engine_model" optional="hide"/>
                                     <field name="brochure_id"/>
                                 </tree>
                             </field>
@@ -202,12 +210,14 @@
                             <group>
                                 <group string="Pricing">
                                     <field name="tvh_price" readonly="1"/>
+                                    <field name="tvh_pricefile_price"/>
                                     <field name="tvh_list_price" readonly="1"/>
                                     <field name="surcharge_amount" readonly="1"/>
                                     <field name="environmental_fee" readonly="1"/>
                                 </group>
                                 <group string="Stock">
                                     <field name="tvh_quantity_in_stock" readonly="1"/>
+                                    <field name="tvh_quantity_in_stock_be" readonly="1"/>
                                     <field name="availability_code_id" readonly="1"/>
                                     <field name="tvh_quantity_updated_at" readonly="1"/>
                                 </group>

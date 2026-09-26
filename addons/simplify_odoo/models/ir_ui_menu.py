@@ -29,6 +29,8 @@ HIDDEN_XMLIDS = [
     'utm.menu_link_tracker_root',
     'link_tracker.link_tracker_menu_main',
     'website.menu_website_configuration',
+    # Sales → Products; Catalog → Products replaces it (by xmlid: the name clashes)
+    'sale.product_menu_catalog',
 ]
 
 # Menus that we explicitly want visible even if older installs hid them.

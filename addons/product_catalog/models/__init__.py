@@ -5,3 +5,4 @@ from . import product_application
 from . import product_template
 from . import res_config_settings
 from . import tvh_service
+from . import tvh_import

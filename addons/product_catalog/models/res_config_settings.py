@@ -16,3 +16,10 @@ class ResConfigSettings(models.TransientModel):
     tvh_customer_contact_name = fields.Char(
         'TVH customer contact name', config_parameter='tvh.customer_contact_name',
         default='Silverhorn')
+
+    tvh_ftp_host = fields.Char(
+        'TVH FTPS host', config_parameter='tvh.ftp.host', default='ftp02.irmn.com')
+    tvh_ftp_user = fields.Char('TVH FTPS user', config_parameter='tvh.ftp.user')
+    tvh_ftp_password = fields.Char('TVH FTPS password', config_parameter='tvh.ftp.password')
+    tvh_ftp_folder = fields.Char(
+        'TVH FTPS folder', config_parameter='tvh.ftp.folder', default='silverhorn')

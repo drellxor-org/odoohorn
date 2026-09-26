@@ -11,4 +11,17 @@
         <field name="numbercall">-1</field>
         <field name="active" eval="True"/>
     </record>
+    <record id="cron_tvh_import" model="ir.cron">
+        <field name="name">TVH: daily FTPS import (catalog, applications, prices, stock, images)</field>
+        <field name="model_id" ref="model_tvh_import"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_import()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <!-- TVH drops the daily stock file around 09:15 UTC -->
+        <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 10:00:00')"/>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True"/>
+    </record>
 </odoo>

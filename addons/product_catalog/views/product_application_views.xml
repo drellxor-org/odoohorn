@@ -9,7 +9,11 @@
                 <field name="make_id"/>
                 <field name="model"/>
                 <field name="serie"/>
+                <field name="vehicle_brand"/>
                 <field name="vehicle_type_code" optional="hide"/>
+                <field name="engine_brand" optional="hide"/>
+                <field name="engine_series" optional="hide"/>
+                <field name="engine_model" optional="hide"/>
                 <field name="brochure_id"/>
             </tree>
         </field>
@@ -29,7 +33,11 @@
                             <field name="serie"/>
                         </group>
                         <group>
+                            <field name="vehicle_brand"/>
                             <field name="vehicle_type_code"/>
+                            <field name="engine_brand"/>
+                            <field name="engine_series"/>
+                            <field name="engine_model"/>
                             <field name="brochure_id"/>
                         </group>
                     </group>
@@ -47,6 +55,7 @@
                 <field name="make_id"/>
                 <field name="model"/>
                 <field name="serie"/>
+                <field name="vehicle_brand"/>
                 <field name="brochure_id"/>
                 <filter name="without_brochure" string="Without brochure"
                         domain="[('brochure_id', '=', False)]"/>

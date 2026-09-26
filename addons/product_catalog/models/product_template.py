@@ -17,6 +17,14 @@ class ProductTemplate(models.Model):
     width_mm = fields.Float('Packaged width (mm)')
     height_mm = fields.Float('Packaged height (mm)')
 
+    # Set by the daily TVH import (tvh.import) to detect changed rows.
+    tvh_source_digest = fields.Char('TVH catalog row digest', copy=False, readonly=True)
+    tvh_image_url = fields.Char('TVH image URL', copy=False, readonly=True)
+    tvh_pricefile_price = fields.Float(
+        'TVH price file price', copy=False, readonly=True,
+        help='Last value the TVH price file gave this part. tvh_price follows the file only '
+             'when this changes, so a manual refresh from TVH is not overwritten.')
+
     application_ids = fields.One2many(
         'product.application', 'product_tmpl_id', 'Applications')
 
@@ -48,7 +56,8 @@ class ProductTemplate(models.Model):
                              help='Negotiated customer price returned by TVH, before surcharges.')
     tvh_list_price = fields.Float('TVH list price',
                                   help='TVH public list price.')
-    tvh_quantity_in_stock = fields.Char('TVH stock')
+    tvh_quantity_in_stock = fields.Char('TVH stock (UK)')
+    tvh_quantity_in_stock_be = fields.Char('TVH stock (BE)')
     tvh_quantity_updated_at = fields.Datetime('TVH last refresh')
 
     quality_brand = fields.Char('Quality brand')

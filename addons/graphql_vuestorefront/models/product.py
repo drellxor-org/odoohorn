@@ -248,7 +248,7 @@ class ProductPublicCategory(models.Model):
                 if not category.id:
                     category.website_slug = None
                 else:
-                    self._slugify_children()
+                    category._slugify_children()
 
     def _slugify_category(self):
         slug_list = []

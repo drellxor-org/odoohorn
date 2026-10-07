@@ -392,12 +392,6 @@ class TvhUnitCode(OdooObjectType):
     iso_code = graphene.String()
 
 
-class ProductTvhQuantityDiscount(OdooObjectType):
-    id = graphene.Int(required=True)
-    qty = graphene.Float()
-    price = graphene.Float()
-
-
 class ProductApplication(OdooObjectType):
     id = graphene.Int(required=True)
     make = graphene.Field(lambda: ProductMake)
@@ -492,9 +486,9 @@ class Product(OdooObjectType):
     applications = graphene.List(graphene.NonNull(lambda: ProductApplication))
 
     # --- TVH-specific ----------------------------------------------------------
+    # Purchase-side data (tvh_price, tvh_list_price, surcharges, TVH quantity tiers)
+    # is deliberately not exposed: this API is public. Customers see `price` only.
     tvh_number = graphene.Int()
-    tvh_price = graphene.Float()
-    tvh_list_price = graphene.Float()
     tvh_quantity_in_stock = graphene.String()
     tvh_quantity_in_stock_be = graphene.String()
     tvh_quantity_updated_at = graphene.String()
@@ -505,12 +499,9 @@ class Product(OdooObjectType):
     is_reconditioned = graphene.Boolean()
     is_non_returnable = graphene.Boolean()
     is_non_cancellable = graphene.Boolean()
-    surcharge_amount = graphene.Float()
-    environmental_fee = graphene.Float()
     minimum_order_quantity = graphene.Float()
     orderable = graphene.Boolean()
     not_orderable_reason = graphene.String()
-    tvh_quantity_discounts = graphene.List(graphene.NonNull(lambda: ProductTvhQuantityDiscount))
 
     # --- replacement chain -----------------------------------------------------
     replaced_by = graphene.Field(lambda: Product)
@@ -645,7 +636,11 @@ class Product(OdooObjectType):
         return pricing_info or None
 
     def resolve_price(self, info):
-        return self.list_price or None
+        # Through the website pricelist: list_price is the TVH base price, the shop
+        # markup lives in the pricelist (product_catalog/data/pricelist_data.xml).
+        pricelist = self.env['website'].get_current_website().get_current_pricelist()
+        # rounded like order lines, so the shown price matches the cart
+        return pricelist.currency_id.round(pricelist._get_product_price(self, 1.0)) or None
 
     def resolve_attribute_values(self, info):
         return self.attribute_line_ids.product_template_value_ids or None
@@ -687,9 +682,6 @@ class Product(OdooObjectType):
 
     def resolve_orderable(self, info):
         return bool(self.sale_ok)
-
-    def resolve_tvh_quantity_discounts(self, info):
-        return self.tvh_quantity_discount_ids or None
 
     # --- replacement chain ----------------------------------------------------
     def resolve_replaced_by(self, info):

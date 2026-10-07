@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Shop price = TVH base price (list_price) + 30%, on the pricelist the website and
+         every customer use by default. Updatable on purpose: the Pricelists menu is hidden
+         (simplify_odoo), so this file is the source of truth for the markup. -->
+    <record id="pricelist_item_website_markup" model="product.pricelist.item">
+        <field name="pricelist_id" ref="product.list0"/>
+        <field name="applied_on">3_global</field>
+        <field name="compute_price">formula</field>
+        <field name="base">list_price</field>
+        <field name="price_discount">-30</field>
+    </record>
+</odoo>

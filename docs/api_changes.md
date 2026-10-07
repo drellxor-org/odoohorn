@@ -124,9 +124,9 @@ extend type Product {
   weightGr: Float; lengthMm: Float; widthMm: Float; heightMm: Float
   applications: [ProductApplication!]
 
-  # TVH
+  # TVH (purchase prices, surcharges and quantity tiers are intentionally not exposed;
+  # `price` is the shop price incl. markup)
   tvhNumber: Int
-  tvhPrice: Float; tvhListPrice: Float
   tvhQuantityInStock: String    # was Float — UK warehouse, from the daily TVH stock file
   tvhQuantityInStockBe: String  # BE warehouse, same "NO"/"1".."+10" convention
   tvhQuantityUpdatedAt: String
@@ -137,12 +137,9 @@ extend type Product {
   isReconditioned: Boolean
   isNonReturnable: Boolean
   isNonCancellable: Boolean
-  surchargeAmount: Float
-  environmentalFee: Float
   minimumOrderQuantity: Float
   orderable: Boolean
   notOrderableReason: String
-  tvhQuantityDiscounts: [ProductTvhQuantityDiscount!]
 
   # Replacement chain
   replacedBy: Product
@@ -153,7 +150,6 @@ type DataSource             { id: Int!; code: String; name: String }
 type ProductMake            { id: Int!; code: String; name: String; dataSource: DataSource }
 type TvhAvailabilityCode    { id: Int!; code: String; description: String }
 type TvhUnitCode            { id: Int!; code: String; description: String; isoCode: String }
-type ProductTvhQuantityDiscount { id: Int!; qty: Float; price: Float }
 type ProductApplication {
   id: Int!
   make: ProductMake

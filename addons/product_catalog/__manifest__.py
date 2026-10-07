@@ -15,6 +15,7 @@
         'security/ir.model.access.csv',
         'data/data_source_data.xml',
         'data/cron_data.xml',
+        'data/pricelist_data.xml',
         'views/data_source_views.xml',
         'views/product_make_views.xml',
         'views/product_application_views.xml',

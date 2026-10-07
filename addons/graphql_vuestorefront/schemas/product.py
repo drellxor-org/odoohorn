@@ -123,40 +123,32 @@ def _category_depth(category):
     return (category.parent_path or '').count('/') - 1
 
 
-def _aggregate_makes(products):
-    counts = {}
-    names = {}
-    codes = {}
-    for p in products:
-        m = p.make_id
-        if not m:
-            continue
-        counts[m.id] = counts.get(m.id, 0) + 1
-        names[m.id] = m.name
-        codes[m.id] = m.code
-    return [{'id': mid, 'name': names[mid], 'code': codes[mid], 'count': cnt, 'parent_id': None}
-            for mid, cnt in counts.items()]
+def _aggregate_makes(Product, domain):
+    groups = Product.read_group(domain, ['make_id'], ['make_id'])
+    makes = Product.env['product.make'].browse([g['make_id'][0] for g in groups if g['make_id']])
+    counts = {g['make_id'][0]: g['make_id_count'] for g in groups if g['make_id']}
+    return [{'id': m.id, 'name': m.name, 'code': m.code, 'count': counts[m.id], 'parent_id': None}
+            for m in makes]
 
 
-def _aggregate_categories(products, depth):
-    """Aggregate categories at `depth` over the products' public_categ_slug_ids
-    (which already includes ancestors)."""
-    counts = {}
-    names = {}
-    parents = {}
-    for p in products:
-        cats = p.public_categ_slug_ids if 'public_categ_slug_ids' in p._fields else p.public_categ_ids
-        for c in cats:
-            if _category_depth(c) != depth:
-                continue
-            counts[c.id] = counts.get(c.id, 0) + 1
-            names[c.id] = c.display_name or c.name
-            parents[c.id] = c.parent_id.id if c.parent_id else None
-    return [{'id': cid, 'name': names[cid], 'parent_id': parents[cid], 'count': cnt, 'code': None}
-            for cid, cnt in counts.items()]
+def _aggregate_categories(Product, domain):
+    """{depth: [facet]} over public_categ_slug_ids, which already includes ancestors."""
+    groups = Product.read_group(domain, ['public_categ_slug_ids'], ['public_categ_slug_ids'])
+    counts = {g['public_categ_slug_ids'][0]: g['public_categ_slug_ids_count']
+              for g in groups if g['public_categ_slug_ids']}
+    by_depth = {0: [], 1: [], 2: []}
+    for c in Product.env['product.public.category'].browse(list(counts)):
+        depth = _category_depth(c)
+        if depth in by_depth:
+            by_depth[depth].append({'id': c.id, 'name': c.display_name or c.name,
+                                    'parent_id': c.parent_id.id or None,
+                                    'count': counts[c.id], 'code': None})
+    return by_depth
 
 
 def get_product_list(env, current_page, page_size, search, sort, **kwargs):
+    """Counting, price range and facets run as SQL aggregates: loading every matching
+    record to aggregate in Python cost ~1s per query once the 13.5k TVH catalog landed."""
     Product = env['product.template'].sudo()
     domain, partial_domain = get_search_domain(env, search, **kwargs)
 
@@ -166,33 +158,27 @@ def get_product_list(env, current_page, page_size, search, sort, **kwargs):
     else:
         offset = 0
     order = get_search_order(sort)
-    products = Product.search(domain, order=order)
+    total_count = Product.search_count(domain)
+    paged = Product.search(domain, order=order, offset=offset, limit=page_size)
 
-    # If attribute values are selected, we need to get the full list of attribute values and prices
-    if domain == partial_domain:
-        attribute_values = products.mapped('variant_attribute_value_ids')
-        prices = products.mapped('list_price')
-    else:
-        without_attributes_products = Product.search(partial_domain)
-        attribute_values = without_attributes_products.mapped('variant_attribute_value_ids')
-        prices = without_attributes_products.mapped('list_price')
-
-    total_count = len(products)
-    paged = products[offset:offset + page_size]
+    # Price range and attribute values ignore the price/attribute filters themselves,
+    # so the filter UI can still offer the full range.
+    stats = Product.read_group(partial_domain,
+                               ['min_price:min(list_price)', 'max_price:max(list_price)'], [])[0]
+    attribute_values = env['product.attribute.value'].browse([
+        g['variant_attribute_value_ids'][0]
+        for g in Product.read_group(partial_domain, ['variant_attribute_value_ids'],
+                                    ['variant_attribute_value_ids'])
+        if g['variant_attribute_value_ids']])
 
     # Facets — strict style: all dimensions are computed from the already-filtered
     # product set, so the available options never exceed what the current filter
     # actually contains.
-    available_makes = _aggregate_makes(products)
-    available_families = _aggregate_categories(products, depth=0)
-    available_subfamilies = _aggregate_categories(products, depth=1)
-    available_subsubfamilies = _aggregate_categories(products, depth=2)
+    available_makes = _aggregate_makes(Product, domain)
+    categories = _aggregate_categories(Product, domain)
 
-    if prices:
-        return (paged, total_count, attribute_values, min(prices), max(prices),
-                available_makes, available_families, available_subfamilies, available_subsubfamilies)
-    return (paged, total_count, attribute_values, 0.0, 0.0,
-            available_makes, available_families, available_subfamilies, available_subsubfamilies)
+    return (paged, total_count, attribute_values, stats['min_price'] or 0.0, stats['max_price'] or 0.0,
+            available_makes, categories[0], categories[1], categories[2])
 
 
 class ProductFacets(graphene.ObjectType):

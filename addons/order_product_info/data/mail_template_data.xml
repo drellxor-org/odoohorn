@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data noupdate="0">
+        <!-- Both templates were once loaded with noupdate="1"; Odoo keeps that flag on the
+             xmlid forever and silently skips them on every -u. Clear it so edits below
+             always reach existing databases. One call per xmlid: <value search> only
+             passes the first match. -->
+        <function model="ir.model.data" name="write">
+            <value model="ir.model.data" search="[('module', '=', 'sale'), ('name', '=', 'mail_template_sale_confirmation')]"/>
+            <value eval="{'noupdate': False}"/>
+        </function>
+        <function model="ir.model.data" name="write">
+            <value model="ir.model.data" search="[('module', '=', 'order_product_info'), ('name', '=', 'mail_template_sale_confirmation_to_company')]"/>
+            <value eval="{'noupdate': False}"/>
+        </function>
+
 
         <!-- =========================================================
              CUSTOMER: Order Confirmation
@@ -157,7 +170,9 @@
 <div style="margin: 0px; padding: 0px;">
     <t t-set="base_url" t-value="object.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''"/>
     <t t-set="order_date" t-value="object.date_order and object.date_order.strftime('%Y-%m-%d') or ''"/>
-    <t t-set="ship_country" t-value="(object.partner_shipping_id and object.partner_shipping_id.country_id.name) or (object.partner_id and object.partner_id.country_id.name) or ''"/>
+    <!-- confirmPayment stores the chosen country on the customer (partner_id.country_id);
+         a saved delivery address may carry an older one, so it's only a fallback. -->
+    <t t-set="ship_country" t-value="object.partner_id.country_id.name or object.partner_shipping_id.country_id.name or ''"/>
 
     <p style="margin: 0px; padding: 0px; font-size: 16px;">
         New order <span style="font-weight:bold;" t-out="object.name or ''"/> (<span t-out="order_date"/>)

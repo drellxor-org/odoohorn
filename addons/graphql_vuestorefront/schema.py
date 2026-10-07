@@ -65,7 +65,7 @@ schema = graphene.Schema(
            mailing_list.MailingListList, brochure.BrochureList, brochure.Brochure, brochure.BrochureCategory,
            brochure.BrochureAttachment,
            objects.DataSource, objects.ProductMake, objects.ProductApplication,
-           objects.TvhAvailabilityCode, objects.TvhUnitCode, objects.ProductTvhQuantityDiscount,
+           objects.TvhAvailabilityCode, objects.TvhUnitCode,
            product.FacetValue,
            search.ParsedQuery, search.Suggestion,
            search.SearchProductsSlice, search.SearchBrochuresSlice, search.SearchArticlesSlice,

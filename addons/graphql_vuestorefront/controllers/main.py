@@ -98,12 +98,20 @@ class GraphQLController(http.Controller, GraphQLControllerMixin):
         return super(GraphQLController, self)._process_request(schema, data)
 
     def _set_website_context(self):
-        """Set website context based on http_request_host header."""
+        """Website from the Request-Host header, language from the frontend_lang cookie.
+
+        Unknown or missing host falls back to the current website, so the language cookie
+        applies either way (before, a host that matched no website domain dropped it).
+        """
         try:
             request_host = request.httprequest.headers.environ.get('HTTP_REQUEST_HOST')
-            website = request.env['website'].search([('domain', 'ilike', request_host)], limit=1)
+            Website = request.env['website']
+            website = (request_host and Website.search([('domain', 'ilike', request_host)], limit=1)) \
+                or Website.get_current_website()
             if website:
                 preferred_lang = request.httprequest.cookies.get('frontend_lang')
+                if preferred_lang not in dict(request.env['res.lang'].get_installed()):
+                    preferred_lang = None
 
                 context = dict(request.context)
                 context.update({

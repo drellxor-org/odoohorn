@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Quotations open on all quotations, not only "My Quotations". Not in the noupdate
+         product_views.xml: overrides there never reach already-installed databases. -->
+    <record id="sale.action_quotations_with_onboarding" model="ir.actions.act_window">
+        <field name="context">{}</field>
+    </record>
+    <record id="sale.action_quotations" model="ir.actions.act_window">
+        <field name="context">{}</field>
+    </record>
+</odoo>

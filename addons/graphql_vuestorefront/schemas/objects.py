@@ -255,7 +255,6 @@ class Category(OdooObjectType):
     childs = graphene.List(graphene.NonNull(lambda: Category))
     slug = graphene.String()
     products = graphene.List(graphene.NonNull(lambda: Product))
-    json_ld = generic.GenericScalar()
     page_message = graphene.String()
     image = graphene.String()
     small_image = graphene.String()
@@ -287,9 +286,6 @@ class Category(OdooObjectType):
 
     def resolve_products(self, info):
         return self.product_tmpl_ids or None
-
-    def resolve_json_ld(self, info):
-        return self and self.get_json_ld() or None
 
     def resolve_seo_metadata(self, info):
         return self.get_website_meta() or None
@@ -468,7 +464,6 @@ class Product(OdooObjectType):
                                      description='Specific to Product Template')
     product_variants = graphene.List(graphene.NonNull(lambda: Product), description='Specific to Product Template')
     first_variant = graphene.Field((lambda: Product), description='Specific to use in Product Template')
-    json_ld = generic.GenericScalar()
     popularity = graphene.Int()
     page_message = graphene.String()
     attachments = graphene.List(graphene.String)
@@ -650,9 +645,6 @@ class Product(OdooObjectType):
 
     def resolve_first_variant(self, info):
         return self.product_variant_id or None
-
-    def resolve_json_ld(self, info):
-        return self and self.get_json_ld() or None
 
     def resolve_attachments(self, info):
         return [f'/web/content/product.attachment/{a.id}/attachment/{a.filename}' for a in self.product_attachment_ids]

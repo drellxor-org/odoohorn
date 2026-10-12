@@ -22,7 +22,6 @@ class BrochureCategory(OdooObjectType):
     childs = graphene.List(graphene.NonNull(lambda: BrochureCategory))
     slug = graphene.String()
     page_message = graphene.String()
-    json_ld = generic.GenericScalar()
     seo_metadata = generic.GenericScalar()
     brochures = graphene.List(graphene.NonNull(lambda: Brochure))
     image = graphene.String()
@@ -41,9 +40,6 @@ class BrochureCategory(OdooObjectType):
 
     def resolve_brochures(self, info):
         return self.env['brochure'].search([('category_ids', 'in', self.ids)]) or None
-
-    def resolve_json_ld(self, info):
-        return self.json_ld or None
 
     def resolve_seo_metadata(self, info):
         return self.get_website_meta() or None
@@ -79,7 +75,6 @@ class Brochure(OdooObjectType):
     popularity = graphene.Int()
     categories = graphene.List(graphene.NonNull(BrochureCategory))
     attachments = graphene.List(graphene.NonNull(BrochureAttachment))
-    json_ld = generic.GenericScalar()
     seo_metadata = generic.GenericScalar()
 
     def resolve_slug(self, info):
@@ -93,9 +88,6 @@ class Brochure(OdooObjectType):
 
     def resolve_attachments(self, info):
         return self.attachment_ids.filtered(lambda a: a.is_published) or None
-
-    def resolve_json_ld(self, info):
-        return self.json_ld or None
 
     def resolve_seo_metadata(self, info):
         return self.get_website_meta() or None

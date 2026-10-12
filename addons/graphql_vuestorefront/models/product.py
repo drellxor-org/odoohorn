@@ -43,25 +43,28 @@ class ProductTemplate(models.Model):
 
     @api.depends('name')
     def _compute_website_slug(self):
-        langs = self.env['res.lang'].search([])
-
-        for product in self:
-            for lang in langs:
-                product = product.with_context(lang=lang.code)
-
-                if not product.id:
-                    product.website_slug = None
-                else:
-                    prefix = '/parts'
-                    slug_name = slugify(product.name or '').strip().strip('-')
-                    product.website_slug = '{}/{}-{}'.format(prefix, slug_name, product.id)
+        # One URL per product, from the English name, stored under en_US only: Odoo reads and
+        # searches other languages through the en_US fallback, so it works for every visitor.
+        for product in self.with_context(lang='en_US'):
+            slug = None
+            if product.id:
+                slug = '/parts/{}-{}'.format(slugify(product.name or '').strip().strip('-'), product.id)
+            product.website_slug = slug
 
     @api.model
     def _init_migrate_slugs_to_parts(self):
-        """Recompute slugs still on the old /product/ prefix. Runs on every -u (no-op once
-        done), loaded before data/search_indexes.xml rebuilds search_corpus from them."""
-        old = self.with_context(active_test=False, lang='en_US').search([('website_slug', '=like', '/product/%')])
+        """Slugs are stored under en_US only, with /parts/: drop per-language copies and
+        recompute any left on the old /product/ prefix. Runs on every -u (no-op once done),
+        before data/search_indexes.xml rebuilds search_corpus from them."""
+        cr = self.env.cr
+        cr.execute("""
+            UPDATE product_template SET website_slug = jsonb_build_object('en_US', website_slug->>'en_US')
+            WHERE website_slug IS NOT NULL AND website_slug - 'en_US' <> '{}'::jsonb
+        """)
+        cr.execute("SELECT id FROM product_template WHERE website_slug->>'en_US' LIKE '/product/%'")
+        old = self.browse([r[0] for r in cr.fetchall()])
         if old:
+            self.env.invalidate_all()
             old._compute_website_slug()
 
     @api.depends('product_variant_ids')

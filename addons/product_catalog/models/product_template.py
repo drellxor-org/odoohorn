@@ -36,18 +36,14 @@ class ProductTemplate(models.Model):
 
     @api.depends('name', 'website_slug_override')
     def _compute_website_slug(self):
-        langs = self.env['res.lang'].search([])
-        for product in self:
-            for lang in langs:
-                product_lang = product.with_context(lang=lang.code)
-                if not product_lang.id:
-                    product_lang.website_slug = None
-                    continue
-                if product_lang.website_slug_override:
-                    product_lang.website_slug = product_lang.website_slug_override
-                else:
-                    slug_name = slugify(product_lang.name or '').strip().strip('-')
-                    product_lang.website_slug = '/parts/{}-{}'.format(slug_name, product_lang.id)
+        # One URL per product, from the English name, stored under en_US only: Odoo reads and
+        # searches other languages through the en_US fallback, so it works for every visitor.
+        for product in self.with_context(lang='en_US'):
+            slug = None
+            if product.id:
+                slug = product.website_slug_override or '/parts/{}-{}'.format(
+                    slugify(product.name or '').strip().strip('-'), product.id)
+            product.website_slug = slug
 
     # --- TVH inquiry result fields -------------------------------------------------
     tvh_number = fields.Integer('TVH number', index=True,

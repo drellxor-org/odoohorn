@@ -36,18 +36,17 @@ class ProductTemplate(models.Model):
 
     @api.depends('name', 'website_slug_override')
     def _compute_website_slug(self):
-        langs = self.env['res.lang'].search([])
+        # One URL per product: built from the English name and stored identically for every
+        # language, so a lookup by slug works whatever the visitor's language.
+        langs = self.env['res.lang'].search([]).mapped('code')
         for product in self:
+            slug = None
+            if product.id:
+                name = product.with_context(lang='en_US').name
+                slug = product.website_slug_override or '/parts/{}-{}'.format(
+                    slugify(name or '').strip().strip('-'), product.id)
             for lang in langs:
-                product_lang = product.with_context(lang=lang.code)
-                if not product_lang.id:
-                    product_lang.website_slug = None
-                    continue
-                if product_lang.website_slug_override:
-                    product_lang.website_slug = product_lang.website_slug_override
-                else:
-                    slug_name = slugify(product_lang.name or '').strip().strip('-')
-                    product_lang.website_slug = '/parts/{}-{}'.format(slug_name, product_lang.id)
+                product.with_context(lang=lang).website_slug = slug
 
     # --- TVH inquiry result fields -------------------------------------------------
     tvh_number = fields.Integer('TVH number', index=True,

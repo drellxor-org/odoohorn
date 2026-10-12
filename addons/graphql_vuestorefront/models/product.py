@@ -43,24 +43,29 @@ class ProductTemplate(models.Model):
 
     @api.depends('name')
     def _compute_website_slug(self):
-        langs = self.env['res.lang'].search([])
-
+        # One URL per product: built from the English name and stored identically for every
+        # language, so a lookup by slug works whatever the visitor's language.
+        langs = self.env['res.lang'].search([]).mapped('code')
         for product in self:
+            slug = None
+            if product.id:
+                name = product.with_context(lang='en_US').name
+                slug = '/parts/{}-{}'.format(slugify(name or '').strip().strip('-'), product.id)
             for lang in langs:
-                product = product.with_context(lang=lang.code)
-
-                if not product.id:
-                    product.website_slug = None
-                else:
-                    prefix = '/parts'
-                    slug_name = slugify(product.name or '').strip().strip('-')
-                    product.website_slug = '{}/{}-{}'.format(prefix, slug_name, product.id)
+                product.with_context(lang=lang).website_slug = slug
 
     @api.model
     def _init_migrate_slugs_to_parts(self):
-        """Recompute slugs still on the old /product/ prefix. Runs on every -u (no-op once
-        done), loaded before data/search_indexes.xml rebuilds search_corpus from them."""
-        old = self.with_context(active_test=False, lang='en_US').search([('website_slug', '=like', '/product/%')])
+        """Recompute slugs still on the old /product/ prefix or still localized per language.
+        Runs on every -u (no-op once done), before data/search_indexes.xml rebuilds
+        search_corpus from them."""
+        # old /product/ prefix, or a per-language slug that differs from the English one
+        self.env.cr.execute("""
+            SELECT id FROM product_template
+            WHERE EXISTS (SELECT 1 FROM jsonb_each_text(website_slug) AS t(lang, slug)
+                          WHERE slug LIKE '/product/%' OR slug IS DISTINCT FROM website_slug->>'en_US')
+        """)
+        old = self.browse([r[0] for r in self.env.cr.fetchall()]).with_context(active_test=False)
         if old:
             old._compute_website_slug()
 

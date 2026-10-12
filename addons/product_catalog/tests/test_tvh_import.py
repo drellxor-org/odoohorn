@@ -50,6 +50,9 @@ class TestTvhImport(TransactionCase):
         self.assertEqual(a1.public_categ_ids.parent_id.name, 'Test Family')
         self.assertEqual(a1.website_slug, '/parts/pump-%d' % a1.id)
         self.assertEqual(a1.with_context(lang='fr_FR').website_slug, a1.website_slug, 'one slug for every language')
+        self.env.flush_all()
+        self.env.cr.execute('SELECT website_slug FROM product_template WHERE id = %s', [a1.id])
+        self.assertEqual(list(self.env.cr.fetchone()[0]), ['en_US'], 'slug stored under en_US only')
 
         self.import_catalog(catalog_row('A1', 'BIG PUMP'))
         self.assertEqual(a1.name, 'BIG PUMP')

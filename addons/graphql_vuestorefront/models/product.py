@@ -43,30 +43,28 @@ class ProductTemplate(models.Model):
 
     @api.depends('name')
     def _compute_website_slug(self):
-        # One URL per product: built from the English name and stored identically for every
-        # language, so a lookup by slug works whatever the visitor's language.
-        langs = self.env['res.lang'].search([]).mapped('code')
-        for product in self:
+        # One URL per product, from the English name, stored under en_US only: Odoo reads and
+        # searches other languages through the en_US fallback, so it works for every visitor.
+        for product in self.with_context(lang='en_US'):
             slug = None
             if product.id:
-                name = product.with_context(lang='en_US').name
-                slug = '/parts/{}-{}'.format(slugify(name or '').strip().strip('-'), product.id)
-            for lang in langs:
-                product.with_context(lang=lang).website_slug = slug
+                slug = '/parts/{}-{}'.format(slugify(product.name or '').strip().strip('-'), product.id)
+            product.website_slug = slug
 
     @api.model
     def _init_migrate_slugs_to_parts(self):
-        """Recompute slugs still on the old /product/ prefix or still localized per language.
-        Runs on every -u (no-op once done), before data/search_indexes.xml rebuilds
-        search_corpus from them."""
-        # old /product/ prefix, or a per-language slug that differs from the English one
-        self.env.cr.execute("""
-            SELECT id FROM product_template
-            WHERE EXISTS (SELECT 1 FROM jsonb_each_text(website_slug) AS t(lang, slug)
-                          WHERE slug LIKE '/product/%' OR slug IS DISTINCT FROM website_slug->>'en_US')
+        """Slugs are stored under en_US only, with /parts/: drop per-language copies and
+        recompute any left on the old /product/ prefix. Runs on every -u (no-op once done),
+        before data/search_indexes.xml rebuilds search_corpus from them."""
+        cr = self.env.cr
+        cr.execute("""
+            UPDATE product_template SET website_slug = jsonb_build_object('en_US', website_slug->>'en_US')
+            WHERE website_slug IS NOT NULL AND website_slug - 'en_US' <> '{}'::jsonb
         """)
-        old = self.browse([r[0] for r in self.env.cr.fetchall()]).with_context(active_test=False)
+        cr.execute("SELECT id FROM product_template WHERE website_slug->>'en_US' LIKE '/product/%'")
+        old = self.browse([r[0] for r in cr.fetchall()])
         if old:
+            self.env.invalidate_all()
             old._compute_website_slug()
 
     @api.depends('product_variant_ids')

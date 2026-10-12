@@ -53,9 +53,17 @@ class ProductTemplate(models.Model):
                 if not product.id:
                     product.website_slug = None
                 else:
-                    prefix = '/product'
+                    prefix = '/parts'
                     slug_name = slugify(product.name or '').strip().strip('-')
                     product.website_slug = '{}/{}-{}'.format(prefix, slug_name, product.id)
+
+    @api.model
+    def _init_migrate_slugs_to_parts(self):
+        """Recompute slugs still on the old /product/ prefix. Runs on every -u (no-op once
+        done), loaded before data/search_indexes.xml rebuilds search_corpus from them."""
+        old = self.with_context(active_test=False, lang='en_US').search([('website_slug', '=like', '/product/%')])
+        if old:
+            old._compute_website_slug()
 
     @api.depends('product_variant_ids')
     def _compute_variant_attribute_value_ids(self):
@@ -138,7 +146,7 @@ class ProductTemplate(models.Model):
             "image": images,
             "offers": {
                 "@type": "Offer",
-                "url": "%s/product/%s" % (website.domain or '', slug(self)),
+                "url": "%s/parts/%s" % (website.domain or '', slug(self)),
                 "priceCurrency": self.currency_id.name,
                 "price": self.list_price,
                 "itemCondition": "https://schema.org/NewCondition",
@@ -185,7 +193,7 @@ class ProductProduct(models.Model):
             "image": images,
             "offers": {
                 "@type": "Offer",
-                "url": "%s/product/%s" % (website.domain or '', slug(self)),
+                "url": "%s/parts/%s" % (website.domain or '', slug(self)),
                 "priceCurrency": self.currency_id.name,
                 "price": self.list_price,
                 "itemCondition": "https://schema.org/NewCondition",

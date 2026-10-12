@@ -47,7 +47,7 @@ class ProductTemplate(models.Model):
                     product_lang.website_slug = product_lang.website_slug_override
                 else:
                     slug_name = slugify(product_lang.name or '').strip().strip('-')
-                    product_lang.website_slug = '/product/{}-{}'.format(slug_name, product_lang.id)
+                    product_lang.website_slug = '/parts/{}-{}'.format(slug_name, product_lang.id)
 
     # --- TVH inquiry result fields -------------------------------------------------
     tvh_number = fields.Integer('TVH number', index=True,

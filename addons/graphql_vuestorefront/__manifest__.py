@@ -38,6 +38,7 @@
         'data/ir_config_parameter_data.xml',
         'data/ir_cron_data.xml',
         'data/product_public_category_data.xml',
+        'data/slug_migration.xml',
         'data/search_indexes.xml',
         'views/product_views.xml',
         'views/website_views.xml',

@@ -101,3 +101,26 @@ class TestTvhImport(TransactionCase):
         self.importer._import_prices(path)
         self.assertEqual(a1.tvh_price, 11.0, 'same file must not undo a manual refresh')
         self.assertEqual(a1.list_price, 11.0, 'shop price follows tvh_price')
+
+
+@tagged('post_install', '-at_install')
+class TestTvhInquiry(TransactionCase):
+
+    def test_suggestions_link_only_known_parts(self):
+        make = self.env['product.make'].create({'code': 'T98', 'name': 'TESTMAKE'})
+        Tmpl = self.env['product.template']
+        original = Tmpl.create({'name': 'PUMP', 'default_code': 'P1', 'make_id': make.id})
+        known = Tmpl.create({'name': 'PUMP B', 'default_code': 'P2', 'make_id': make.id})
+        line = lambda n, part, **kw: dict({'custLineNumber': n, 'lineNumber': int(float(n) * 10),
+                                           'makeCode': 'T98', 'partNumber': part, 'price': 5.0}, **kw)
+        count = Tmpl.search_count([])
+        self.env['tvh.service']._apply_inquiry(original, {'lines': [
+            line('1.0', 'P1'), line('1.1', 'P2'), line('1.2', 'UNKNOWN')]})
+        self.assertEqual(original.alternative_product_ids, known)
+        self.assertEqual(Tmpl.search_count([]), count, 'TVH suggestions must not create products')
+
+        # replacement (priceCode 36) to a part we don't carry: not linked, nothing created
+        self.env['tvh.service']._apply_inquiry(original, {'lines': [
+            line('1.0', 'P1', priceCode='36'), line('1.1', 'UNKNOWN')]})
+        self.assertFalse(original.replaced_by_id)
+        self.assertEqual(Tmpl.search_count([]), count)

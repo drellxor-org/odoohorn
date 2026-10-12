@@ -2,10 +2,9 @@
 # Copyright 2023 ODOOGAP/PROMPTEQUATION LDA
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 
-import json
 import requests
 from odoo import models, fields, api, tools, _
-from odoo.addons.http_routing.models.ir_http import slug, slugify
+from odoo.addons.http_routing.models.ir_http import slugify
 from odoo.exceptions import ValidationError
 
 
@@ -53,9 +52,17 @@ class ProductTemplate(models.Model):
                 if not product.id:
                     product.website_slug = None
                 else:
-                    prefix = '/product'
+                    prefix = '/parts'
                     slug_name = slugify(product.name or '').strip().strip('-')
                     product.website_slug = '{}/{}-{}'.format(prefix, slug_name, product.id)
+
+    @api.model
+    def _init_migrate_slugs_to_parts(self):
+        """Recompute slugs still on the old /product/ prefix. Runs on every -u (no-op once
+        done), loaded before data/search_indexes.xml rebuilds search_corpus from them."""
+        old = self.with_context(active_test=False, lang='en_US').search([('website_slug', '=like', '/product/%')])
+        if old:
+            old._compute_website_slug()
 
     @api.depends('product_variant_ids')
     def _compute_variant_attribute_value_ids(self):
@@ -115,96 +122,6 @@ class ProductTemplate(models.Model):
 
         return combination_info
 
-    def get_json_ld(self):
-        self.ensure_one()
-        if self.json_ld:
-            return self.json_ld
-
-        env = self.env
-        website = env['website'].get_current_website()
-        base_url = env['ir.config_parameter'].sudo().get_param('web.base.url', '')
-        if base_url and base_url[-1:] == '/':
-            base_url = base_url[:-1]
-
-        # Get list of images
-        images = list()
-        if self.image_1920:
-            images.append('%s/web/image/product.product/%s/image' % (base_url, self.id))
-
-        json_ld = {
-            "@context": "https://schema.org/",
-            "@type": "Product",
-            "name": self.display_name,
-            "image": images,
-            "offers": {
-                "@type": "Offer",
-                "url": "%s/product/%s" % (website.domain or '', slug(self)),
-                "priceCurrency": self.currency_id.name,
-                "price": self.list_price,
-                "itemCondition": "https://schema.org/NewCondition",
-                "availability": "https://schema.org/InStock",
-                "seller": {
-                    "@type": "Organization",
-                    "name": website and website.display_name or self.env.user.company_id.display_name
-                }
-            }
-        }
-
-        if self.description_sale:
-            json_ld.update({"description": self.description_sale})
-
-        if self.default_code:
-            json_ld.update({"sku": self.default_code})
-
-        return json.dumps(json_ld)
-
-
-class ProductProduct(models.Model):
-    _inherit = 'product.product'
-
-    def get_json_ld(self):
-        self.ensure_one()
-        if self.json_ld:
-            return self.json_ld
-
-        env = self.env
-        website = env['website'].get_current_website()
-        base_url = env['ir.config_parameter'].sudo().get_param('web.base.url', '')
-        if base_url and base_url[-1:] == '/':
-            base_url = base_url[:-1]
-
-        # Get list of images
-        images = list()
-        if self.image_1920:
-            images.append('%s/web/image/product.product/%s/image' % (base_url, self.id))
-
-        json_ld = {
-            "@context": "https://schema.org/",
-            "@type": "Product",
-            "name": self.display_name,
-            "image": images,
-            "offers": {
-                "@type": "Offer",
-                "url": "%s/product/%s" % (website.domain or '', slug(self)),
-                "priceCurrency": self.currency_id.name,
-                "price": self.list_price,
-                "itemCondition": "https://schema.org/NewCondition",
-                "availability": "https://schema.org/InStock",
-                "seller": {
-                    "@type": "Organization",
-                    "name": website and website.display_name or self.env.user.company_id.display_name
-                }
-            }
-        }
-
-        if self.description_sale:
-            json_ld.update({"description": self.description_sale})
-
-        if self.default_code:
-            json_ld.update({"sku": self.default_code})
-
-        return json.dumps(json_ld)
-
 
 class ProductPublicCategory(models.Model):
     _inherit = 'product.public.category'
@@ -217,25 +134,6 @@ class ProductPublicCategory(models.Model):
     def unlink(self):
         self.env['invalidate.cache'].create_invalidate_cache(self._name, self.ids)
         return super(ProductPublicCategory, self).unlink()
-
-    def get_json_ld(self):
-        self.ensure_one()
-        if self.json_ld:
-            return self.json_ld
-
-        website = self.env['website'].get_current_website()
-        base_url = website.domain or ''
-        if base_url and base_url[-1] == '/':
-            base_url = base_url[:-1]
-
-        json_ld = {
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            "url": '{}{}'.format(base_url, self.website_slug or ''),
-            "name": self.display_name,
-        }
-
-        return json.dumps(json_ld)
 
     @api.depends('name')
     def _compute_website_slug(self):

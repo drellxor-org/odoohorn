@@ -1,8 +1,8 @@
 """TVH REST API client.
 
 POST/inquiries is called from a button on product.template. The response is parsed
-into product fields and into auto-created stub products for alternatives and
-temporary replacements.
+into product fields; alternatives and temporary replacements TVH suggests are linked
+only when we already carry them (never created).
 
 Credentials live in ir.config_parameter (set via Settings → Catalog), with optional
 fall-back to TVH_API_* environment variables for .env-driven deployments.
@@ -92,8 +92,13 @@ class TvhService(models.AbstractModel):
     @api.model
     def refresh_product(self, product):
         """Call POST /customers/{customerCode}/inquiries for a single product.template
-        and apply the response to it (and any auto-created alternative / replacement).
+        and apply the response to it (and to any alternative / replacement we carry).
+
+        Runs with system rights whoever triggers it (the website's public user via the
+        refreshProductFromTvh mutation, or staff via the button): it writes TVH-owned data
+        such as quantity-discount tiers, which only administrators may create.
         """
+        self, product = self.sudo(), product.sudo()
         product.ensure_one()
         if not (product.make_id and product.default_code):
             raise UserError(_('Product is missing make or default_code; cannot inquire.'))
@@ -144,18 +149,21 @@ class TvhService(models.AbstractModel):
 
         self._write_line_to_product(product, original)
 
-        # Replacement
+        # Replacement / alternatives are only linked when we already carry the part (from the
+        # catalog import); TVH's suggestions never create products.
         if replacement_line is not None:
-            replacement_product = self._upsert_product_from_line(replacement_line)
-            self._write_line_to_product(replacement_product, replacement_line)
-            product.replaced_by_id = replacement_product.id
+            replacement_product = self._find_product_from_line(replacement_line)
+            if replacement_product:
+                self._write_line_to_product(replacement_product, replacement_line)
+                product.replaced_by_id = replacement_product.id
 
         # Alternatives — one-way M2M (original → alternatives)
         alt_ids = []
         for line in alternative_lines:
-            alt = self._upsert_product_from_line(line)
-            self._write_line_to_product(alt, line)
-            alt_ids.append(alt.id)
+            alt = self._find_product_from_line(line)
+            if alt:
+                self._write_line_to_product(alt, line)
+                alt_ids.append(alt.id)
         if alt_ids:
             product.alternative_product_ids = [(4, aid) for aid in alt_ids]
 
@@ -213,39 +221,13 @@ class TvhService(models.AbstractModel):
             })
 
     @api.model
-    def _upsert_product_from_line(self, line):
-        """Find or create a product.template matching the (makeCode, partNumber) of a
-        response line. The TVH inquiry response only carries makeCode/partNumber, not
-        make_description, so a brand-new make is created with name=code and gets a proper
-        name on the next catalog file import (or via the cron, if implemented).
-        """
-        make_code = line.get('makeCode') or ''
-        part = line.get('partNumber') or ''
-        if not (make_code and part):
-            raise UserError(_('TVH response line is missing makeCode or partNumber.'))
-        source = self.env.ref('product_catalog.data_source_tvh', raise_if_not_found=False)
-        Make = self.env['product.make'].sudo()
-        make = Make.search([('code', '=', make_code),
-                            ('data_source_id', '=', source.id if source else False)], limit=1)
-        if not make:
-            make = Make.create({
-                'code': make_code,
-                'name': make_code,
-                'data_source_id': source.id if source else False,
-            })
-        Tmpl = self.env['product.template'].sudo()
-        tmpl = Tmpl.search([('default_code', '=', part), ('make_id', '=', make.id)], limit=1)
-        if not tmpl:
-            tmpl = Tmpl.create({
-                'name': line.get('productName') or part,
-                'default_code': part,
-                'make_id': make.id,
-                'data_source_id': source.id if source else False,
-                'type': 'product',
-                'sale_ok': True,
-                'purchase_ok': True,
-            })
-        return tmpl
+    def _find_product_from_line(self, line):
+        """The product.template we carry for the (makeCode, partNumber) of a response line,
+        or an empty recordset."""
+        return self.env['product.template'].sudo().search([
+            ('make_id.code', '=', line.get('makeCode') or ''),
+            ('default_code', '=', line.get('partNumber') or ''),
+        ], limit=1)
 
     @staticmethod
     def _format_stock(qty):

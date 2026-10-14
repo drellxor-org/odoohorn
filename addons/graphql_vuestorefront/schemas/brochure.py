@@ -8,6 +8,7 @@ from odoo.http import request
 
 from odoo.addons.graphql_base import OdooObjectType
 from odoo.addons.http_routing.models.ir_http import slugify
+from odoo.addons.graphql_vuestorefront.schemas.objects import seo_metadata
 
 
 # --------------------- #
@@ -42,7 +43,7 @@ class BrochureCategory(OdooObjectType):
         return self.env['brochure'].search([('category_ids', 'in', self.ids)]) or None
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
     def resolve_image(self, info):
         return f'/web/image/brochure.category/{self.id}/image_1920'
@@ -95,7 +96,7 @@ class Brochure(OdooObjectType):
         return self.attachment_ids.filtered(lambda a: a.is_published) or None
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
 
 class BrochureList(graphene.ObjectType):

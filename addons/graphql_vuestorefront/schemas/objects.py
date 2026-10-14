@@ -39,6 +39,19 @@ PaymentTransactionState = graphene.Enum('PaymentTransactionState', [('Draft', 'd
                                                                ('Canceled', 'cancel'), ('Error', 'error')])
 
 
+def seo_metadata(record):
+    """Only what someone wrote in the record's SEO tab; the storefront's page
+    template covers everything else. Not Odoo's get_website_meta(): it adds
+    the website logo from the backend host, its own title format and the
+    GraphQL endpoint as og:url."""
+    meta = {
+        'title': record.website_meta_title or None,
+        'description': record.website_meta_description or None,
+        'image': record.website_meta_og_img or None,
+    }
+    return {key: value for key, value in meta.items() if value} or None
+
+
 class SortEnum(graphene.Enum):
     ASC = 'ASC'
     DESC = 'DESC'
@@ -288,7 +301,7 @@ class Category(OdooObjectType):
         return self.product_tmpl_ids or None
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
 
 class AttributeValue(OdooObjectType):
@@ -656,7 +669,7 @@ class Product(OdooObjectType):
         return [f'/web/content/product.attachment/{a.id}/attachment/{a.filename}' for a in self.product_attachment_ids]
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
     # --- product_catalog resolvers -------------------------------------------
     def resolve_data_source(self, info):
@@ -1127,7 +1140,7 @@ class Article(OdooObjectType):
         return self.website_slug or None
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
     def resolve_images(self, info):
         return self.article_images.sorted(key=lambda x: x.sequence)

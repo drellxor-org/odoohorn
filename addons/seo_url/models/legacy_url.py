@@ -1,6 +1,10 @@
+import re
 from collections import defaultdict
 
 from odoo import api, fields, models
+from odoo.tools import file_open
+
+KNOWN_URLS_FILE = 'seo_url/data/known_urls.txt'
 
 
 def normalize_path(path):
@@ -69,6 +73,29 @@ class LegacyUrl(models.Model):
         target = {'res_model': record._name, 'res_id': record.id}
         existing.write(target)
         self.sudo().create([dict(target, path=p) for p in paths - set(existing.mapped('path'))])
+
+    @api.model
+    def add_known_urls(self, prefix, model, id_map=None):
+        """Redirect the known historical urls under `prefix` (data/known_urls.txt)
+        to the record their trailing id belongs to now. The old storefront
+        recomputed slugs on every rename, so many indexed urls exist in no
+        database any more; their id is the only stable part. `id_map` maps old
+        ids to new ones (None: the model kept its ids)."""
+        records = self.env[model].sudo().with_context(active_test=False)
+        added = 0
+        with file_open(KNOWN_URLS_FILE) as known:
+            for line in known:
+                path = line.strip()
+                match = re.search(r'-(\d+)$', path)
+                if not path.startswith(prefix) or not match:
+                    continue
+                old_id = int(match.group(1))
+                new_id = old_id if id_map is None else id_map.get(old_id)
+                record = new_id and records.browse(new_id).exists()
+                if record:
+                    self.add([path], record)
+                    added += 1
+        return added
 
     @api.model
     def redirect_map(self):

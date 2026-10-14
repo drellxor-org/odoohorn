@@ -49,6 +49,8 @@ class Article(models.Model):
         articles = self.with_context(active_test=False)
         for article_id, slug, old_override in cr.fetchall():
             self.env['legacy.url'].add([slug, old_override], articles.browse(article_id))
+        # Older urls (renamed since) that only search engines still know.
+        self.env['legacy.url'].add_known_urls('/article/', 'article')
         articles.search([])._assign_slugs()
         params.set_param(SLUGS_DONE_PARAM, '1')
 

@@ -45,9 +45,9 @@ class TestLegacyUrl(TransactionCase):
         self.assertNotIn('/product/unpublished-1', self.Legacy.redirect_map())
 
     def test_path_is_unique(self):
-        self.add('/category/kubota-1', self.product)
+        self.add('/test-only/unique-path', self.product)
         with self.assertRaises(Exception), self.cr.savepoint(), mute_logger('odoo.sql_db'):
-            self.add('/Category/Kubota-1/', self.product)
+            self.add('/Test-Only/Unique-Path/', self.product)
 
     def test_editing_a_slug_keeps_the_old_url_working(self):
         self.product.website_slug = '/Parts/Test/New-Name/'

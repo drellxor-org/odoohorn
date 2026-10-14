@@ -19,7 +19,8 @@ class Article(models.Model):
     image_64 = fields.Image("Image 64", store=True, compute='_compute_image_1920')
 
     # Assigned once at creation by seo.slug.mixin; renames never change it.
-    website_slug = fields.Char('Website slug', readonly=True, copy=False)
+    website_slug = fields.Char('Website slug', copy=False)
+    _slug_pattern = r'^/article/[a-z0-9-]+$'
     article_images = fields.One2many('article.image', 'article_id', 'Article images')
     price = fields.Float('Price')
     availability = fields.Char('Availability')

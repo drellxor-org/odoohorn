@@ -24,6 +24,17 @@ class TestBrochureSlugs(TransactionCase):
         self.yanmar.name = 'Yanmar Renamed'
         self.assertEqual(self.series.website_slug, '/catalog/yanmar-renamed/engines/3tnv70-series')
 
+        # Every hub below the renamed one keeps its old url as a redirect.
+        redirects = self.env['legacy.url'].redirect_map()
+        self.assertEqual(redirects['/catalog/yanmar-test/engines/3tnv70-series'],
+                         '/catalog/yanmar-renamed/engines/3tnv70-series')
+        self.assertEqual(redirects['/catalog/yanmar-test'], '/catalog/yanmar-renamed')
+
+        # Moved back: live again, not a redirect.
+        self.yanmar.name = 'Yanmar Test'
+        self.assertNotIn('/catalog/yanmar-test', self.env['legacy.url'].redirect_map())
+        self.assertEqual(self.env['legacy.url'].redirect_map()['/catalog/yanmar-renamed'], '/catalog/yanmar-test')
+
     def test_primary_category_is_the_makes_deepest(self):
         b = self.brochure('Yanmar Test 3TNV70-FDW', self.denyo_engines, self.engines, self.series)
         self.assertEqual(b.primary_category_id, self.series)

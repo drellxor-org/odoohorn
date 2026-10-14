@@ -50,7 +50,7 @@
             <form string="Article">
                 <group>
                     <field name="name"/>
-                    <field name="website_slug" readonly="1"/>
+                    <field name="website_slug"/>
                     <field name="body"/>
                     <field name="price"/>
                     <field name="availability"/>

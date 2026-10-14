@@ -38,6 +38,22 @@ class BrochureCategory(models.Model):
         super().init()
         ensure_slug_index(self)
 
+    def write(self, vals):
+        """Renaming or moving a category moves the hub urls below it: each old
+        one then 301s to its category (legacy.url)."""
+        if not {'name', 'parent_id'} & set(vals):
+            return super().write(vals)
+        tree = self.search([('id', 'child_of', self.ids)]).with_context(lang='en_US')
+        before = {cat.id: cat.website_slug for cat in tree}
+        result = super().write(vals)
+        Legacy = self.env['legacy.url'].sudo()
+        moved = tree.filtered(lambda cat: before[cat.id] and before[cat.id] != cat.website_slug)
+        # A hub moved back onto an old path is live again, not a redirect.
+        Legacy.search([('path', 'in', moved.mapped('website_slug'))]).unlink()
+        for cat in moved:
+            Legacy.add([before[cat.id]], cat)
+        return result
+
     @api.depends('name', 'parent_id.website_slug')
     def _compute_website_slug(self):
         # Stored under en_US only, like every other slug. Parents first: a parent

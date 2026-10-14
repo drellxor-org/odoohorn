@@ -1,7 +1,12 @@
+import re
+
 from psycopg2.extras import execute_values
 
-from odoo import api, models
+from odoo import _, api, models
 from odoo.addons.http_routing.models.ir_http import slugify as _slugify
+from odoo.exceptions import ValidationError
+
+from .legacy_url import normalize_path
 
 
 def slugify(text):
@@ -26,9 +31,12 @@ def ensure_slug_index(model):
 
 
 def taken_slugs(model, exclude_ids=()):
+    """Slugs of other records, plus every legacy path: a url Google knows for
+    one record must never start serving another."""
     model.env.cr.execute(
         f"SELECT {_slug_column(model)} FROM {model._table} "
-        f"WHERE website_slug IS NOT NULL AND NOT (id = ANY(%s))",
+        f"WHERE website_slug IS NOT NULL AND NOT (id = ANY(%s)) "
+        f"UNION SELECT path FROM legacy_url",
         [list(exclude_ids)])
     return {row[0] for row in model.env.cr.fetchall() if row[0]}
 
@@ -64,6 +72,9 @@ class SeoSlugMixin(models.AbstractModel):
     _name = 'seo.slug.mixin'
     _description = 'Permanent website slug'
 
+    # Regex a hand-edited slug must match, e.g. r'^/model/[a-z0-9-]+$'.
+    _slug_pattern = None
+
     def _slug_candidates(self):
         """Readable slugs for this record, best first. Must not be empty."""
         raise NotImplementedError
@@ -78,6 +89,41 @@ class SeoSlugMixin(models.AbstractModel):
         records = super().create(vals_list)
         records.filtered(lambda r: not r.website_slug)._assign_slugs()
         return records
+
+    def write(self, vals):
+        """A slug changes only when someone edits it. The old url then 301s to
+        the record (legacy.url), so links and search results keep working."""
+        if 'website_slug' not in vals:
+            return super().write(vals)
+        vals = dict(vals)
+        slug = vals.pop('website_slug')
+        if vals:
+            super().write(vals)
+        for record in self:
+            record._change_slug(slug)
+        return True
+
+    def _change_slug(self, slug):
+        self.ensure_one()
+        slug = normalize_path(slug)
+        if self._slug_pattern and not re.match(self._slug_pattern, slug):
+            raise ValidationError(_('The url must look like %s, got "%s".', self._slug_pattern, slug))
+        old = self.with_context(lang='en_US').website_slug
+        if slug == old:
+            return
+        Legacy = self.env['legacy.url'].sudo()
+        claimed = Legacy.search([('path', '=', slug)])
+        if claimed and (claimed.res_model, claimed.res_id) != (self._name, self.id):
+            raise ValidationError(_('"%s" is an old url that redirects to another record (%s #%s).',
+                                    slug, claimed.res_model, claimed.res_id))
+        # (Its own old url is in taken_slugs only because of that redirect.)
+        if not claimed and slug in taken_slugs(self, self.ids):
+            raise ValidationError(_('"%s" is already the url of another record.', slug))
+        claimed.unlink()  # back to one of its own old urls: no longer a redirect
+        if old:
+            Legacy.add([old], self)
+        # Stored under en_US only, whatever the editor's language.
+        super(SeoSlugMixin, self.with_context(lang='en_US')).write({'website_slug': slug})
 
     def _assign_slugs(self):
         """Give each record in self a slug, ignoring what it has now. Only for

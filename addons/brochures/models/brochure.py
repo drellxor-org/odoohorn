@@ -31,7 +31,8 @@ class Brochure(models.Model):
     popularity = fields.Integer('Popularity', compute='_compute_popularity', store=True)
 
     # Assigned once at creation by seo.slug.mixin; renames never change it.
-    website_slug = fields.Char('Website Slug', readonly=True, translate=True, copy=False)
+    website_slug = fields.Char('Website Slug', translate=True, copy=False)
+    _slug_pattern = r'^/model/[a-z0-9-]+$'
     json_ld = fields.Char('JSON-LD')
 
     @api.depends('brochure_line_ids')

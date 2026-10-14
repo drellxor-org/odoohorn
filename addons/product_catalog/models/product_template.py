@@ -4,7 +4,7 @@ from odoo import api, fields, models
 from odoo.addons.seo_url.models.slug_mixin import slugify
 
 # Final part url, see docs/seo_tasks.md "P0 · Final URL scheme".
-PART_SLUG_RE = re.compile(r'^/parts/[^/]+/[^/]+$')
+PART_SLUG_RE = re.compile(r'^/parts/[a-z0-9-]+/[a-z0-9-]+$')
 
 
 class ProductTemplate(models.Model):
@@ -36,7 +36,8 @@ class ProductTemplate(models.Model):
     # --- website slug + JSON-LD ----------------------------------------------------
     # Assigned once at creation by seo.slug.mixin, stored under en_US only: Odoo
     # reads and searches other languages through the en_US fallback.
-    website_slug = fields.Char('Website slug', readonly=True, translate=True, copy=False)
+    website_slug = fields.Char('Website slug', translate=True, copy=False)
+    _slug_pattern = PART_SLUG_RE.pattern
     json_ld = fields.Char('JSON-LD')
 
     def _slug_candidates(self):

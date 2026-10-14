@@ -1,0 +1,84 @@
+from collections import defaultdict
+
+from odoo import api, fields, models
+
+
+def normalize_path(path):
+    """Compare paths the way the frontend normalises urls before looking them
+    up: leading slash, lowercase, no trailing slash."""
+    path = (path or '').strip().lower()
+    if not path.startswith('/'):
+        path = '/' + path
+    return path.rstrip('/') or '/'
+
+
+def record_url(record):
+    """The record's public path, or None. `website_slug` can be translated, so
+    it may arrive as an {'en_US': ...} dict."""
+    slug = record.with_context(lang='en_US').website_slug
+    if isinstance(slug, dict):
+        slug = slug.get('en_US') or next(iter(slug.values()), None)
+    if not slug:
+        return None
+    return slug if slug.startswith('/') else f'/{slug}'
+
+
+def is_live(record):
+    if 'active' in record._fields and not record.active:
+        return False
+    if 'is_published' in record._fields and not record.is_published:
+        return False
+    return True
+
+
+class LegacyUrl(models.Model):
+    """An old public path that now belongs to a record. The frontend answers it
+    with a 301 to the record's current url, so the target follows the record
+    instead of being a stored url that can go stale."""
+    _name = 'legacy.url'
+    _description = 'Legacy URL (301 redirect)'
+    _rec_name = 'path'
+    _order = 'path'
+
+    path = fields.Char(required=True, index=True)
+    res_model = fields.Char('Target model', required=True)
+    res_id = fields.Many2oneReference('Target record', model_field='res_model', required=True)
+
+    _sql_constraints = [
+        ('path_unique', 'unique(path)', 'This path already redirects to a record.'),
+    ]
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if 'path' in vals:
+                vals['path'] = normalize_path(vals['path'])
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if 'path' in vals:
+            vals['path'] = normalize_path(vals['path'])
+        return super().write(vals)
+
+    @api.model
+    def redirect_map(self):
+        """{old path: current url} for every row whose record still has a live
+        page. Rows pointing at deleted or unpublished records are left out, so
+        those paths fall through to a 404."""
+        rows_by_model = defaultdict(list)
+        for row in self.sudo().search([]):
+            rows_by_model[row.res_model].append(row)
+
+        result = {}
+        for model, rows in rows_by_model.items():
+            if model not in self.env:
+                continue
+            records = self.env[model].sudo().with_context(active_test=False) \
+                .browse([row.res_id for row in rows]).exists()
+            urls = {rec.id: record_url(rec) for rec in records if is_live(rec)}
+            for row in rows:
+                url = urls.get(row.res_id)
+                # A path that is the record's current url again is not a redirect.
+                if url and normalize_path(url) != row.path:
+                    result[row.path] = url
+        return result

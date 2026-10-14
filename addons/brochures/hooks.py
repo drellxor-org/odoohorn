@@ -3,6 +3,8 @@ from collections import defaultdict
 
 from odoo import SUPERUSER_ID, api
 
+from .duplicates import cleanup_duplicates
+
 _logger = logging.getLogger(__name__)
 
 _NON_USER_MODULES_EXCLUDE = ('__export__', '__import__', '__custom__')
@@ -67,6 +69,7 @@ def migrate_data(cr, registry):
     _migrate_attachments(env, brochure_map)
     _migrate_order_lines(env, brochure_map)
     _record_legacy_urls(env, cat_map, brochure_map)
+    cleanup_duplicates(env)
     _cleanup_legacy(env, brochure_map)
 
     _logger.info('[brochures] migration complete: %s categories, %s brochures',

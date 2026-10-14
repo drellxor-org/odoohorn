@@ -2,4 +2,6 @@
 <odoo>
     <!-- No noupdate: runs on every -u brochures; a no-op once every url is final. -->
     <function model="brochure" name="_init_slugs"/>
+    <!-- Once per database, before the /model/ urls go public. -->
+    <function model="brochure" name="_init_cleanup_duplicates"/>
 </odoo>

@@ -1,6 +1,8 @@
 from odoo import api, fields, models
 from odoo.addons.seo_url.models.slug_mixin import slugify
 
+from ..duplicates import DONE_PARAM, cleanup_duplicates
+
 
 class Brochure(models.Model):
     _name = 'brochure'
@@ -68,6 +70,15 @@ class Brochure(models.Model):
             return (not name.startswith(make), -len(cat.parent_path or ''), cat.id)
 
         return min(self.category_ids, key=rank, default=self.env['brochure.category'])
+
+    @api.model
+    def _init_cleanup_duplicates(self):
+        """For databases migrated before the cleanup existed (the install hook
+        runs it on a fresh migration). Once only, and never with no brochures:
+        on install this data function runs before the hook creates them."""
+        if self.env['ir.config_parameter'].sudo().get_param(DONE_PARAM) or not self.search_count([]):
+            return
+        cleanup_duplicates(self.env)
 
     @api.model
     def _init_slugs(self):

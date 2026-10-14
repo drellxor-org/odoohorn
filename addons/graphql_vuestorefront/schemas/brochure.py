@@ -36,7 +36,7 @@ class BrochureCategory(OdooObjectType):
         return self.child_id or None
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
 
     def resolve_brochures(self, info):
         return self.env['brochure'].search([('category_ids', 'in', self.ids)]) or None
@@ -74,11 +74,16 @@ class Brochure(OdooObjectType):
     description = graphene.String()
     popularity = graphene.Int()
     categories = graphene.List(graphene.NonNull(BrochureCategory))
+    # Owns the breadcrumb trail; `categories` may hold several.
+    primary_category = graphene.Field(BrochureCategory)
     attachments = graphene.List(graphene.NonNull(BrochureAttachment))
     seo_metadata = generic.GenericScalar()
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
+
+    def resolve_primary_category(self, info):
+        return self.primary_category_id or None
 
     def resolve_description(self, info):
         return self.description_sale or None
@@ -127,7 +132,7 @@ class BrochureQuery(graphene.ObjectType):
             rec = Brochure_.browse(id).exists()
         elif slug:
             rec = Brochure_.search(
-                ['|', ('website_slug', '=', slug), ('website_slug_override', '=', slug)], limit=1)
+                [('website_slug', '=', slug)], limit=1)
         else:
             raise GraphQLError(_('Either id or slug is required.'))
         if not rec:
@@ -180,7 +185,7 @@ class BrochureCategoryQuery(graphene.ObjectType):
             rec = Cat.browse(id).exists()
         elif slug:
             rec = Cat.search(
-                ['|', ('website_slug', '=', slug), ('website_slug_override', '=', slug)], limit=1)
+                [('website_slug', '=', slug)], limit=1)
         else:
             raise GraphQLError(_('Either id or slug is required.'))
         if not rec:

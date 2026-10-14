@@ -414,7 +414,7 @@ class ProductApplication(OdooObjectType):
     def resolve_brochure_slug(self, info):
         if not self.brochure_id:
             return None
-        return self.brochure_id.website_slug_override or self.brochure_id.website_slug or None
+        return self.brochure_id.website_slug or None
 
 
 class Product(OdooObjectType):
@@ -586,7 +586,7 @@ class Product(OdooObjectType):
         return self.tvh_quantity_in_stock or 'NO'
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
 
     def resolve_alternative_products(self, info):
         return self.alternative_product_ids or None
@@ -774,7 +774,7 @@ class OrderBrochureLine(OdooObjectType):
     def resolve_brochure_slug(self, info):
         if not self.brochure_id:
             return None
-        return self.brochure_id.website_slug_override or self.brochure_id.website_slug or None
+        return self.brochure_id.website_slug or None
 
 
 class Coupon(OdooObjectType):
@@ -1118,7 +1118,7 @@ class Article(OdooObjectType):
             return f'/web/image/article.image/{images[0].id}/image_512'
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
 
     def resolve_seo_metadata(self, info):
         return self.get_website_meta() or None

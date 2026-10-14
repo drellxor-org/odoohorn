@@ -24,7 +24,7 @@ class TestLegacyUrl(TransactionCase):
 
     def test_map_points_at_current_url(self):
         self.add('/Product/Old-Thing-571/', self.product)
-        self.assertEqual(self.Legacy.redirect_map(), {'/product/old-thing-571': '/parts/legacy-target'})
+        self.assertEqual(self.Legacy.redirect_map()['/product/old-thing-571'], '/parts/legacy-target')
 
         # The target follows the record, not a stored url.
         self.product.website_slug = '/parts/renamed'
@@ -33,14 +33,16 @@ class TestLegacyUrl(TransactionCase):
     def test_dead_or_circular_targets_are_left_out(self):
         self.add('/product/unpublished-1', self.product)
         self.add('/parts/legacy-target', self.product)  # the record's own current url
+        self.assertNotIn('/parts/legacy-target', self.Legacy.redirect_map(), 'no self-redirect')
+
         self.product.is_published = False
-        self.assertEqual(self.Legacy.redirect_map(), {})
+        self.assertNotIn('/product/unpublished-1', self.Legacy.redirect_map())
 
         self.product.is_published = True
-        self.assertEqual(self.Legacy.redirect_map(), {'/product/unpublished-1': '/parts/legacy-target'})
+        self.assertEqual(self.Legacy.redirect_map()['/product/unpublished-1'], '/parts/legacy-target')
 
         self.product.unlink()
-        self.assertEqual(self.Legacy.redirect_map(), {})
+        self.assertNotIn('/product/unpublished-1', self.Legacy.redirect_map())
 
     def test_path_is_unique(self):
         self.add('/category/kubota-1', self.product)

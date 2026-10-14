@@ -167,7 +167,6 @@
                             <field name="purchase_ok"/>
                             <field name="data_source_id" readonly="1"/>
                             <field name="website_slug" readonly="1"/>
-                            <field name="website_slug_override"/>
                         </group>
                     </group>
                     <notebook>

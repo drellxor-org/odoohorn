@@ -41,32 +41,6 @@ class ProductTemplate(models.Model):
                     VALUES(%s, %s);
                 """, (product.id, category_id,))
 
-    @api.depends('name')
-    def _compute_website_slug(self):
-        # One URL per product, from the English name, stored under en_US only: Odoo reads and
-        # searches other languages through the en_US fallback, so it works for every visitor.
-        for product in self.with_context(lang='en_US'):
-            slug = None
-            if product.id:
-                slug = '/parts/{}-{}'.format(slugify(product.name or '').strip().strip('-'), product.id)
-            product.website_slug = slug
-
-    @api.model
-    def _init_migrate_slugs_to_parts(self):
-        """Slugs are stored under en_US only, with /parts/: drop per-language copies and
-        recompute any left on the old /product/ prefix. Runs on every -u (no-op once done),
-        before data/search_indexes.xml rebuilds search_corpus from them."""
-        cr = self.env.cr
-        cr.execute("""
-            UPDATE product_template SET website_slug = jsonb_build_object('en_US', website_slug->>'en_US')
-            WHERE website_slug IS NOT NULL AND website_slug - 'en_US' <> '{}'::jsonb
-        """)
-        cr.execute("SELECT id FROM product_template WHERE website_slug->>'en_US' LIKE '/product/%'")
-        old = self.browse([r[0] for r in cr.fetchall()])
-        if old:
-            self.env.invalidate_all()
-            old._compute_website_slug()
-
     @api.depends('product_variant_ids')
     def _compute_variant_attribute_value_ids(self):
         """
@@ -87,9 +61,6 @@ class ProductTemplate(models.Model):
                                                    'product_template_variant_product_attribute_value_rel',
                                                    compute='_compute_variant_attribute_value_ids',
                                                    store=True, readonly=True)
-    website_slug = fields.Char('Website Slug', compute='_compute_website_slug', store=True, readonly=True,
-                               translate=True)
-    website_slug_override = fields.Char('User-defined website Slug')
     public_categ_slug_ids = fields.Many2many('product.public.category',
                                              'product_template_product_public_category_slug_rel',
                                              compute='_compute_public_categ_slug_ids',

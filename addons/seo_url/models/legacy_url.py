@@ -61,6 +61,16 @@ class LegacyUrl(models.Model):
         return super().write(vals)
 
     @api.model
+    def add(self, paths, record):
+        """Make each of `paths` redirect to `record`. An existing row is
+        re-pointed: the newest owner of a path wins."""
+        paths = {normalize_path(p) for p in paths if p}
+        existing = self.sudo().search([('path', 'in', list(paths))])
+        target = {'res_model': record._name, 'res_id': record.id}
+        existing.write(target)
+        self.sudo().create([dict(target, path=p) for p in paths - set(existing.mapped('path'))])
+
+    @api.model
     def redirect_map(self):
         """{old path: current url} for every row whose record still has a live
         page. Rows pointing at deleted or unpublished records are left out, so

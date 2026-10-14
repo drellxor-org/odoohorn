@@ -48,7 +48,7 @@ class TestTvhImport(TransactionCase):
         self.assertEqual(a1.weight, 0.5)
         self.assertEqual(a1.public_categ_ids.name, 'Test Sub')
         self.assertEqual(a1.public_categ_ids.parent_id.name, 'Test Family')
-        self.assertEqual(a1.website_slug, '/parts/pump-%d' % a1.id)
+        self.assertEqual(a1.website_slug, '/parts/testmake/a1-pump')
         self.assertEqual(a1.with_context(lang='fr_FR').website_slug, a1.website_slug, 'one slug for every language')
         self.env.flush_all()
         self.env.cr.execute('SELECT website_slug FROM product_template WHERE id = %s', [a1.id])
@@ -56,6 +56,7 @@ class TestTvhImport(TransactionCase):
 
         self.import_catalog(catalog_row('A1', 'BIG PUMP'))
         self.assertEqual(a1.name, 'BIG PUMP')
+        self.assertEqual(a1.website_slug, '/parts/testmake/a1-pump', 'a public url never follows renames')
         self.assertFalse(a2.active, 'dropped from the file → archived')
 
         # inquiry stubs (no digest) are never archived

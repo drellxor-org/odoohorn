@@ -15,7 +15,6 @@ _BROCHURE_FIELDS_FROM_PRODUCT = (
     'website_meta_description',
     'website_meta_keywords',
     'website_meta_og_img',
-    'website_slug_override',
     'json_ld',
     'is_published',
 )
@@ -28,7 +27,6 @@ _BROCHURE_CATEGORY_FIELDS_FROM_PUBLIC_CATEGORY = (
     'website_meta_description',
     'website_meta_keywords',
     'website_meta_og_img',
-    'website_slug_override',
     'json_ld',
     'is_published',
 )

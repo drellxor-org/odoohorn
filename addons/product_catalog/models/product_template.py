@@ -1,10 +1,15 @@
+import re
+
 from odoo import api, fields, models
-from odoo.addons.http_routing.models.ir_http import slugify
+from odoo.addons.seo_url.models.slug_mixin import slugify
+
+# Final part url, see docs/seo_tasks.md "P0 · Final URL scheme".
+PART_SLUG_RE = re.compile(r'^/parts/[^/]+/[^/]+$')
 
 
 class ProductTemplate(models.Model):
     _name = 'product.template'
-    _inherit = ['product.template', 'website.seo.metadata', 'website.published.mixin']
+    _inherit = ['product.template', 'website.seo.metadata', 'website.published.mixin', 'seo.slug.mixin']
 
     data_source_id = fields.Many2one('data.source', 'Data source', ondelete='restrict')
     make_id = fields.Many2one('product.make', 'Make', ondelete='restrict', index=True)
@@ -28,22 +33,18 @@ class ProductTemplate(models.Model):
     application_ids = fields.One2many(
         'product.application', 'product_tmpl_id', 'Applications')
 
-    # --- website slug + JSON-LD (mirrors graphql_vuestorefront's pattern) ----------
-    website_slug = fields.Char(
-        'Website slug', compute='_compute_website_slug', store=True, readonly=True, translate=True)
-    website_slug_override = fields.Char('User-defined website slug')
+    # --- website slug + JSON-LD ----------------------------------------------------
+    # Assigned once at creation by seo.slug.mixin, stored under en_US only: Odoo
+    # reads and searches other languages through the en_US fallback.
+    website_slug = fields.Char('Website slug', readonly=True, translate=True, copy=False)
     json_ld = fields.Char('JSON-LD')
 
-    @api.depends('name', 'website_slug_override')
-    def _compute_website_slug(self):
-        # One URL per product, from the English name, stored under en_US only: Odoo reads and
-        # searches other languages through the en_US fallback, so it works for every visitor.
-        for product in self.with_context(lang='en_US'):
-            slug = None
-            if product.id:
-                slug = product.website_slug_override or '/parts/{}-{}'.format(
-                    slugify(product.name or '').strip().strip('-'), product.id)
-            product.website_slug = slug
+    def _slug_candidates(self):
+        # /parts/{make}/{part no}-{name}: make + part number is the TVH key and is
+        # unique; the name is there for people, frozen like the rest.
+        make = slugify(self.make_id.name) or 'misc'
+        head = '-'.join(filter(None, [slugify(self.default_code) or str(self.id), slugify(self.name)]))
+        return [f'/parts/{make}/{head}']
 
     # --- TVH inquiry result fields -------------------------------------------------
     tvh_number = fields.Integer('TVH number', index=True,
@@ -102,10 +103,9 @@ class ProductTemplate(models.Model):
 
     @api.model
     def _init_backfill_website_slug(self):
-        """Force the stored compute for any product.template that still has an empty
-        website_slug (e.g. records that pre-date this field). Idempotent — safe to call
-        repeatedly via a <function> element on each module update.
-        """
-        missing = self.with_context(active_test=False).search([('website_slug', '=', False)])
-        if missing:
-            missing._compute_website_slug()
+        """Give every part without a final url one: no slug yet, or an older
+        format (/product/…, /parts/{name}-{id}) that was never public on prod.
+        Idempotent, runs on every update via data/backfill.xml."""
+        self.env.cr.execute("SELECT id, website_slug->>'en_US' FROM product_template")
+        stale = [pid for pid, slug in self.env.cr.fetchall() if not slug or not PART_SLUG_RE.match(slug)]
+        self.with_context(active_test=False).browse(stale)._assign_slugs()

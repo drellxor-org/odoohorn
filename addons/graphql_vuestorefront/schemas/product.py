@@ -291,7 +291,8 @@ class ProductQuery(graphene.ObjectType):
         if id:
             product = Product.search([('id', '=', id)], limit=1)
         elif slug:
-            product = Product.search([('website_slug', '=', slug)], limit=1)
+            # A url is public only while the record is: unpublished parts 404.
+            product = Product.search([('website_slug', '=', slug), ('is_published', '=', True)], limit=1)
         elif barcode:
             product = Product.search([('barcode', '=', barcode)], limit=1)
         else:
@@ -303,7 +304,8 @@ class ProductQuery(graphene.ObjectType):
             if not product.can_access_from_current_website():
                 product = Product
 
-        return product
+        # null rather than an empty record, which fails the non-null Product.id.
+        return product or None
 
     @staticmethod
     def resolve_products(self, info, filter, current_page, page_size, search, sort):

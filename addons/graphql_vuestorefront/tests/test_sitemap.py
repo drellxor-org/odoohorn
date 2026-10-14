@@ -1,3 +1,5 @@
+import json
+
 from odoo.tests import HttpCase, tagged
 
 
@@ -19,3 +21,19 @@ class TestSitemap(HttpCase):
             self.assertIn(f'{path}</loc>', xml)
         for path in (hidden.website_slug, article.website_slug, empty.website_slug):
             self.assertNotIn(f'{path}</loc>', xml)
+
+    def test_unpublished_urls_do_not_resolve(self):
+        brochure = self.env['brochure'].create({'name': 'Lookup Model'})
+        part = self.env['product.template'].create({'name': 'Lookup Part', 'is_published': True})
+
+        def lookup(field, slug):
+            response = self.url_open('/graphql/vsf', data=json.dumps(
+                {'query': '{ %s(slug: "%s") { id } }' % (field, slug)}),
+                headers={'Content-Type': 'application/json'})
+            return response.json().get('data', {}).get(field)
+
+        self.assertTrue(lookup('brochure', brochure.website_slug))
+        self.assertTrue(lookup('product', part.website_slug))
+        brochure.is_published = part.is_published = False
+        self.assertIsNone(lookup('brochure', brochure.website_slug))
+        self.assertIsNone(lookup('product', part.website_slug))

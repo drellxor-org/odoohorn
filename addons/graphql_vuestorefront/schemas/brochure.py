@@ -131,8 +131,9 @@ class BrochureQuery(graphene.ObjectType):
         if id:
             rec = Brochure_.browse(id).exists()
         elif slug:
+            # A url is public only while the record is: unpublished models 404.
             rec = Brochure_.search(
-                [('website_slug', '=', slug)], limit=1)
+                [('website_slug', '=', slug), ('is_published', '=', True)], limit=1)
         else:
             raise GraphQLError(_('Either id or slug is required.'))
         if not rec:
@@ -185,7 +186,7 @@ class BrochureCategoryQuery(graphene.ObjectType):
             rec = Cat.browse(id).exists()
         elif slug:
             rec = Cat.search(
-                [('website_slug', '=', slug)], limit=1)
+                [('website_slug', '=', slug), ('is_published', '=', True)], limit=1)
         else:
             raise GraphQLError(_('Either id or slug is required.'))
         if not rec:

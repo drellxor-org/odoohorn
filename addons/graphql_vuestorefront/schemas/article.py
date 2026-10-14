@@ -54,7 +54,8 @@ class ArticleQuery(graphene.ObjectType):
         if id:
             article = article_model.search([('id', '=', id)], limit=1)
         elif slug:
-            article = article_model.search([('website_slug', '=', slug)], limit=1)
+            # A url is public only while the record is: unpublished articles 404.
+            article = article_model.search([('website_slug', '=', slug), ('is_published', '=', True)], limit=1)
         else:
             article = article_model
         if not article:

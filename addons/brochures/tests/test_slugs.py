@@ -1,4 +1,6 @@
-from odoo.tests import TransactionCase, tagged
+import base64
+
+from odoo.tests import HttpCase, TransactionCase, tagged
 
 
 @tagged('post_install', '-at_install')
@@ -52,3 +54,18 @@ class TestBrochureSlugs(TransactionCase):
         early.name = 'Yanmar Test B03 (early model)'
         self.assertEqual(early.website_slug, '/model/yanmar-test-b03', 'a public url never follows renames')
         self.assertFalse(early.copy().website_slug == early.website_slug)
+
+
+@tagged('post_install', '-at_install')
+class TestManualDownloads(HttpCase):
+
+    def test_pdf_manuals_are_not_indexed(self):
+        brochure = self.env['brochure'].create({'name': 'Noindex Model'})
+        manual = self.env['brochure.attachment'].create({
+            'brochure_id': brochure.id, 'filename': 'manual.pdf',
+            'attachment': base64.b64encode(b'%PDF-1.4 test'),
+        })
+        response = self.url_open(f'/web/content/brochure.attachment/{manual.id}/attachment/manual.pdf')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers.get('X-Robots-Tag'), 'noindex')
+        self.assertNotIn('X-Robots-Tag', self.url_open('/web/login').headers, 'only the manuals')

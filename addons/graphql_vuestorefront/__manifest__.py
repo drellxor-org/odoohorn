@@ -39,6 +39,7 @@
         'data/ir_cron_data.xml',
         'data/product_public_category_data.xml',
         'data/seo_cleanup.xml',
+        'data/recaptcha.xml',
         'data/search_indexes.xml',
         'views/product_views.xml',
         'views/website_views.xml',

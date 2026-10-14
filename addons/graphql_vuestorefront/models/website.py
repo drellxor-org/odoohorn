@@ -2,6 +2,8 @@
 # Copyright 2023 ODOOGAP/PROMPTEQUATION LDA
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 
+import os
+
 import requests
 from odoo import models, fields, api
 
@@ -16,6 +18,17 @@ class Website(models.Model):
         'Payment Error Return Url', required=True,  translate=True, default='Dummy'
     )
     vsf_mailing_list_id = fields.Many2one('mailing.list', 'Newsletter', domain=[('is_public', '=', True)])
+
+    @api.model
+    def _init_recaptcha_key_from_env(self):
+        """RECAPTCHA_PRIVATE_KEY (container env, config/development/.env) becomes
+        Odoo's recaptcha_private_key on every update, i.e. every container start.
+        Unset: the parameter is left as it is, so the check stays off (or keeps a
+        key set by hand)."""
+        key = os.environ.get('RECAPTCHA_PRIVATE_KEY', '').strip()
+        params = self.env['ir.config_parameter'].sudo()
+        if key and params.get_param('recaptcha_private_key') != key:
+            params.set_param('recaptcha_private_key', key)
 
     @api.model
     def enable_b2c_reset_password(self):

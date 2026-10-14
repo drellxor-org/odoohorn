@@ -18,6 +18,14 @@ from odoo.addons.payment_adyen.controllers.main import AdyenController
 from odoo.addons.payment_adyen_vsf.controllers.main import AdyenControllerInherit
 
 
+def verify_recaptcha(env, token):
+    """reCAPTCHA v3 via Odoo's google_recaptcha (keys: recaptcha_private_key,
+    recaptcha_min_score). Not checked while no key is set."""
+    verdict = env['ir.http']._verify_recaptcha_token(None, token or '')
+    if verdict not in ('is_human', 'no_secret'):
+        raise GraphQLError(_('We could not verify your request. Please try again.'))
+
+
 class PaymentQuery(graphene.ObjectType):
     payment_provider = graphene.Field(
         PaymentProvider,
@@ -124,12 +132,17 @@ class confirmPayment(graphene.Mutation):
         country = graphene.String(description='Country of delivery: ISO 2-letter code (e.g. "GB") or numeric id')
         comment = graphene.String()
         brochure_lines = graphene.List(BrochureLineInput)
+        recaptcha_token = graphene.String(
+            description='reCAPTCHA v3 token, fetched right before submitting (single use, valid 2 minutes)')
 
     done = graphene.Boolean()
 
     @staticmethod
-    def mutate(self, info, name=None, contact=None, country=None, comment=None, brochure_lines=None):
+    def mutate(self, info, name=None, contact=None, country=None, comment=None, brochure_lines=None,
+               recaptcha_token=None):
         env = info.context["env"]
+        # Before anything is created: a rejected request leaves no cart, partner or mail behind.
+        verify_recaptcha(env, recaptcha_token)
         website = env['website'].get_current_website()
         request.website = website
         # Force-create the cart if it doesn't exist yet — a brochure-only enquiry

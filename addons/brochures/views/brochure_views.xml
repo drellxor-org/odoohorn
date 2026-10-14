@@ -25,14 +25,14 @@
                         <group>
                             <field name="name"/>
                             <field name="category_ids" widget="many2many_tags"/>
+                            <field name="primary_category_id"/>
                             <field name="sequence"/>
                             <field name="active"/>
                             <field name="is_published"/>
                             <field name="popularity" readonly="1"/>
                         </group>
                         <group>
-                            <field name="website_slug" readonly="1"/>
-                            <field name="website_slug_override"/>
+                            <field name="website_slug"/>
                         </group>
                     </group>
                     <notebook>

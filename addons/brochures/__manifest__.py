@@ -10,6 +10,7 @@
         'simplify_odoo',
         'order_product_info',
         'product_attachment',
+        'seo_url',
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -18,6 +19,7 @@
         'views/brochure_attachment_views.xml',
         'views/sale_order_views.xml',
         'views/menu.xml',
+        'data/slugs.xml',
     ],
     'post_init_hook': 'migrate_data',
     'installable': True,

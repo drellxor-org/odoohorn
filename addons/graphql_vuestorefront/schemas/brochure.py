@@ -8,6 +8,7 @@ from odoo.http import request
 
 from odoo.addons.graphql_base import OdooObjectType
 from odoo.addons.http_routing.models.ir_http import slugify
+from odoo.addons.graphql_vuestorefront.schemas.objects import seo_metadata
 
 
 # --------------------- #
@@ -36,13 +37,13 @@ class BrochureCategory(OdooObjectType):
         return self.child_id or None
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
 
     def resolve_brochures(self, info):
         return self.env['brochure'].search([('category_ids', 'in', self.ids)]) or None
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
     def resolve_image(self, info):
         return f'/web/image/brochure.category/{self.id}/image_1920'
@@ -74,11 +75,16 @@ class Brochure(OdooObjectType):
     description = graphene.String()
     popularity = graphene.Int()
     categories = graphene.List(graphene.NonNull(BrochureCategory))
+    # Owns the breadcrumb trail; `categories` may hold several.
+    primary_category = graphene.Field(BrochureCategory)
     attachments = graphene.List(graphene.NonNull(BrochureAttachment))
     seo_metadata = generic.GenericScalar()
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
+
+    def resolve_primary_category(self, info):
+        return self.primary_category_id or None
 
     def resolve_description(self, info):
         return self.description_sale or None
@@ -90,7 +96,7 @@ class Brochure(OdooObjectType):
         return self.attachment_ids.filtered(lambda a: a.is_published) or None
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
 
 class BrochureList(graphene.ObjectType):
@@ -126,8 +132,9 @@ class BrochureQuery(graphene.ObjectType):
         if id:
             rec = Brochure_.browse(id).exists()
         elif slug:
+            # A url is public only while the record is: unpublished models 404.
             rec = Brochure_.search(
-                ['|', ('website_slug', '=', slug), ('website_slug_override', '=', slug)], limit=1)
+                [('website_slug', '=', slug), ('is_published', '=', True)], limit=1)
         else:
             raise GraphQLError(_('Either id or slug is required.'))
         if not rec:
@@ -180,7 +187,7 @@ class BrochureCategoryQuery(graphene.ObjectType):
             rec = Cat.browse(id).exists()
         elif slug:
             rec = Cat.search(
-                ['|', ('website_slug', '=', slug), ('website_slug_override', '=', slug)], limit=1)
+                [('website_slug', '=', slug), ('is_published', '=', True)], limit=1)
         else:
             raise GraphQLError(_('Either id or slug is required.'))
         if not rec:

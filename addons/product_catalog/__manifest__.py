@@ -10,6 +10,7 @@
         'website',
         'brochures',
         'page_message',
+        'seo_url',
     ],
     'data': [
         'security/ir.model.access.csv',

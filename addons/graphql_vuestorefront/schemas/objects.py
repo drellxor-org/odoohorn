@@ -5,7 +5,7 @@
 import graphene
 from graphene.types import generic
 from graphql import GraphQLError
-from odoo import SUPERUSER_ID, _
+from odoo import SUPERUSER_ID, _, tools
 
 from odoo.addons.http_routing.models.ir_http import slugify
 from odoo.addons.graphql_base import OdooObjectType
@@ -37,6 +37,19 @@ InvoiceState = graphene.Enum('InvoiceState', [('Draft', 'draft'), ('Posted', 'po
 PaymentTransactionState = graphene.Enum('PaymentTransactionState', [('Draft', 'draft'), ('Pending', 'pending'),
                                                                ('Authorized', 'authorized'), ('Confirmed', 'done'),
                                                                ('Canceled', 'cancel'), ('Error', 'error')])
+
+
+def seo_metadata(record):
+    """Only what someone wrote in the record's SEO tab; the storefront's page
+    template covers everything else. Not Odoo's get_website_meta(): it adds
+    the website logo from the backend host, its own title format and the
+    GraphQL endpoint as og:url."""
+    meta = {
+        'title': record.website_meta_title or None,
+        'description': record.website_meta_description or None,
+        'image': record.website_meta_og_img or None,
+    }
+    return {key: value for key, value in meta.items() if value} or None
 
 
 class SortEnum(graphene.Enum):
@@ -288,7 +301,7 @@ class Category(OdooObjectType):
         return self.product_tmpl_ids or None
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
 
 class AttributeValue(OdooObjectType):
@@ -414,7 +427,7 @@ class ProductApplication(OdooObjectType):
     def resolve_brochure_slug(self, info):
         if not self.brochure_id:
             return None
-        return self.brochure_id.website_slug_override or self.brochure_id.website_slug or None
+        return self.brochure_id.website_slug or None
 
 
 class Product(OdooObjectType):
@@ -433,6 +446,9 @@ class Product(OdooObjectType):
     meta_keyword = graphene.String()
     meta_description = graphene.String()
     image = graphene.String()
+    # Real pixel width of `image`: image_1920 is only an upper bound, a small
+    # upload stays small. Lets the frontend skip a too-small social preview.
+    image_width = graphene.Int()
     small_image = graphene.String()
     image_filename = graphene.String()
     thumbnail = graphene.String()
@@ -541,6 +557,9 @@ class Product(OdooObjectType):
     def resolve_image(self, info):
         return '/web/image/{}/{}/image_1920'.format(self._name, self.id)
 
+    def resolve_image_width(self, info):
+        return tools.base64_to_image(self.image_1920).size[0] if self.image_1920 else None
+
     def resolve_small_image(self, info):
         return '/web/image/{}/{}/image_128'.format(self._name, self.id)
 
@@ -586,7 +605,7 @@ class Product(OdooObjectType):
         return self.tvh_quantity_in_stock or 'NO'
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
 
     def resolve_alternative_products(self, info):
         return self.alternative_product_ids or None
@@ -650,7 +669,7 @@ class Product(OdooObjectType):
         return [f'/web/content/product.attachment/{a.id}/attachment/{a.filename}' for a in self.product_attachment_ids]
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
     # --- product_catalog resolvers -------------------------------------------
     def resolve_data_source(self, info):
@@ -774,7 +793,7 @@ class OrderBrochureLine(OdooObjectType):
     def resolve_brochure_slug(self, info):
         if not self.brochure_id:
             return None
-        return self.brochure_id.website_slug_override or self.brochure_id.website_slug or None
+        return self.brochure_id.website_slug or None
 
 
 class Coupon(OdooObjectType):
@@ -1118,10 +1137,10 @@ class Article(OdooObjectType):
             return f'/web/image/article.image/{images[0].id}/image_512'
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
     def resolve_images(self, info):
         return self.article_images.sorted(key=lambda x: x.sequence)

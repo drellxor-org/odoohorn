@@ -38,6 +38,12 @@ RESTORE_NAMES = [
     'Sales',
 ]
 
+# Our own menus that share a hidden name: seo_url's "Website" app only holds
+# Legacy URLs, while Odoo's website app (same name) stays hidden.
+KEEP_XMLIDS = [
+    'seo_url.menu_website_root',
+]
+
 
 class IrUiMenu(models.Model):
     _inherit = 'ir.ui.menu'
@@ -57,7 +63,11 @@ class IrUiMenu(models.Model):
             rec = self.env.ref(xmlid, raise_if_not_found=False)
             if rec and rec.active:
                 by_xmlid |= rec
-        to_disable = by_name | by_xmlid
+        keep = self.browse([
+            rec.id for rec in (self.env.ref(xmlid, raise_if_not_found=False) for xmlid in KEEP_XMLIDS)
+            if rec
+        ])
+        to_disable = (by_name | by_xmlid) - keep
         if to_disable:
             _logger.info('[simplify_odoo] deactivating menus: %s',
                          [(m.id, m.name) for m in to_disable])
@@ -65,7 +75,7 @@ class IrUiMenu(models.Model):
 
         # Restore anything we want visible again.
         to_enable = self.with_context(active_test=False).search([
-            ('name', 'in', RESTORE_NAMES), ('active', '=', False)])
+            ('name', 'in', RESTORE_NAMES), ('active', '=', False)]) | keep.filtered(lambda m: not m.active)
         if to_enable:
             _logger.info('[simplify_odoo] re-activating menus: %s',
                          [(m.id, m.name) for m in to_enable])

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Not noupdate: runs on every -u graphql_vuestorefront (every container start). -->
+    <function model="website" name="_init_recaptcha_key_from_env"/>
+</odoo>

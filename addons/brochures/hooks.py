@@ -1,6 +1,9 @@
 import logging
+from collections import defaultdict
 
 from odoo import SUPERUSER_ID, api
+
+from .duplicates import cleanup_duplicates
 
 _logger = logging.getLogger(__name__)
 
@@ -15,7 +18,6 @@ _BROCHURE_FIELDS_FROM_PRODUCT = (
     'website_meta_description',
     'website_meta_keywords',
     'website_meta_og_img',
-    'website_slug_override',
     'json_ld',
     'is_published',
 )
@@ -28,7 +30,6 @@ _BROCHURE_CATEGORY_FIELDS_FROM_PUBLIC_CATEGORY = (
     'website_meta_description',
     'website_meta_keywords',
     'website_meta_og_img',
-    'website_slug_override',
     'json_ld',
     'is_published',
 )
@@ -67,10 +68,55 @@ def migrate_data(cr, registry):
     brochure_map = _migrate_brochures(env, cat_map)
     _migrate_attachments(env, brochure_map)
     _migrate_order_lines(env, brochure_map)
+    _record_legacy_urls(env, cat_map, brochure_map)
+    cleanup_duplicates(env)
     _cleanup_legacy(env, brochure_map)
 
     _logger.info('[brochures] migration complete: %s categories, %s brochures',
                  len(cat_map), len(brochure_map))
+
+
+def _old_urls(env, table, ids):
+    """{id: every path the old storefront served for that row}: the computed
+    slug in each language plus the hand-set override (the frontend linked the
+    override when there was one). Read with SQL: the fields are declared by
+    modules that load after this hook, and the override field is gone."""
+    cr = env.cr
+    cr.execute("SELECT column_name FROM information_schema.columns "
+               "WHERE table_name = %s AND column_name IN ('website_slug', 'website_slug_override')", [table])
+    columns = {row[0] for row in cr.fetchall()}
+    urls = defaultdict(set)
+    if 'website_slug' in columns:
+        cr.execute(f"""
+            SELECT t.id, s.slug
+              FROM {table} t, jsonb_each_text(t.website_slug) AS s(lang, slug)
+             WHERE t.id = ANY(%s) AND jsonb_typeof(t.website_slug) = 'object'
+        """, [list(ids)])
+        for row_id, slug in cr.fetchall():
+            urls[row_id].add(slug)
+    if 'website_slug_override' in columns:
+        cr.execute(f"SELECT id, website_slug_override FROM {table} "
+                   f"WHERE id = ANY(%s) AND website_slug_override <> ''", [list(ids)])
+        for row_id, slug in cr.fetchall():
+            urls[row_id].add(slug)
+    return urls
+
+
+def _record_legacy_urls(env, cat_map, brochure_map):
+    """Every url Google knows for a migrated record 301s to its new page.
+    Must run before _cleanup_legacy deletes the rows that hold those urls; the
+    old ids are not kept anywhere else."""
+    Legacy = env['legacy.url']
+    count = 0
+    for table, id_map, model in (('product_public_category', cat_map, 'brochure.category'),
+                                 ('product_template', brochure_map, 'brochure')):
+        for old_id, paths in _old_urls(env, table, id_map).items():
+            Legacy.add(paths, env[model].browse(id_map[old_id]))
+            count += len(paths)
+    # Older urls (renamed since) that only search engines still know.
+    count += Legacy.add_known_urls('/product/', 'brochure', brochure_map)
+    count += Legacy.add_known_urls('/category/', 'brochure.category', cat_map)
+    _logger.info('[brochures] recorded %s legacy urls', count)
 
 
 def _migrate_categories(env):

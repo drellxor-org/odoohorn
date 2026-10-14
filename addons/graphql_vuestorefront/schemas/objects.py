@@ -5,7 +5,7 @@
 import graphene
 from graphene.types import generic
 from graphql import GraphQLError
-from odoo import SUPERUSER_ID, _
+from odoo import SUPERUSER_ID, _, tools
 
 from odoo.addons.http_routing.models.ir_http import slugify
 from odoo.addons.graphql_base import OdooObjectType
@@ -433,6 +433,9 @@ class Product(OdooObjectType):
     meta_keyword = graphene.String()
     meta_description = graphene.String()
     image = graphene.String()
+    # Real pixel width of `image`: image_1920 is only an upper bound, a small
+    # upload stays small. Lets the frontend skip a too-small social preview.
+    image_width = graphene.Int()
     small_image = graphene.String()
     image_filename = graphene.String()
     thumbnail = graphene.String()
@@ -540,6 +543,9 @@ class Product(OdooObjectType):
 
     def resolve_image(self, info):
         return '/web/image/{}/{}/image_1920'.format(self._name, self.id)
+
+    def resolve_image_width(self, info):
+        return tools.base64_to_image(self.image_1920).size[0] if self.image_1920 else None
 
     def resolve_small_image(self, info):
         return '/web/image/{}/{}/image_128'.format(self._name, self.id)

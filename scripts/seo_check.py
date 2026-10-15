@@ -32,7 +32,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-UA = 'Mozilla/5.0 (compatible; SilverHornSEOCheck/1.0)'
+UA = 'Mozilla/5.0 (compatible; SilverhornSEOCheck/1.0)'
 JUNK = ['/this-page-does-not-exist', '/model/no-such-model', '/catalog/no-such-make',
         '/parts/no-such-make/no-such-part', '/article/no-such-article', '/brochure/old-format-1',
         '/product/never-existed-0']

@@ -137,6 +137,7 @@
                             <t t-if="part.brochure_id">
                                 <a t-att-href="base_url + (part.brochure_id.website_slug or '')" t-out="part.brochure_id.name or ''"/>
                             </t>
+                            <t t-else="">Request <t t-out="part_index + 1"/></t>
                         </td>
                         <td align="center" t-out="part.make or ''"/>
                         <td align="center" t-out="part.machine_serial or ''"/>
@@ -178,9 +179,10 @@
         New order <span style="font-weight:bold;" t-out="object.name or ''"/> (<span t-out="order_date"/>)
         <br/><br/>
         Name: <t t-out="object.partner_id.name or ''"/><br/>
-        Email: <t t-out="object.partner_id.email or ''"/><br/>
-        Phone: <t t-out="object.partner_id.phone or ''"/><br/>
-        Commentary: <t t-out="object.partner_id.comment or ''"/><br/>
+        <t t-if="object.partner_id.email">Email: <t t-out="object.partner_id.email"/><br/></t>
+        <t t-if="object.partner_id.phone">Phone: <t t-out="object.partner_id.phone"/><br/></t>
+        <!-- comment is an Html field (<p>…</p>); a <p> inside this <p> breaks the layout. -->
+        Commentary: <t t-if="object.partner_id.comment" t-out="object.partner_id.comment.striptags()"/><br/>
         Country of delivery: <t t-out="ship_country"/>
         <t t-if="not is_html_empty(object.user_id.signature)">
             <br/><br/>
@@ -281,6 +283,7 @@
                             <t t-if="part.brochure_id">
                                 <a t-att-href="base_url + (part.brochure_id.website_slug or '')" t-out="part.brochure_id.name or ''"/>
                             </t>
+                            <t t-else="">Request <t t-out="part_index + 1"/></t>
                         </td>
                         <td align="center" t-out="part.make or ''"/>
                         <td align="center" t-out="part.machine_serial or ''"/>

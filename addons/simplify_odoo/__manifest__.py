@@ -11,6 +11,8 @@
     ],
     'data': [
         'views/product_views.xml',
+        'views/sale_views.xml',
+        'data/hide_menus.xml',
     ],
     'post_init_hook': 'post_init',
     'installable': True,

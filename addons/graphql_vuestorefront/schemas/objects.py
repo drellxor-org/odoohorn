@@ -5,7 +5,7 @@
 import graphene
 from graphene.types import generic
 from graphql import GraphQLError
-from odoo import SUPERUSER_ID, _
+from odoo import SUPERUSER_ID, _, tools
 
 from odoo.addons.http_routing.models.ir_http import slugify
 from odoo.addons.graphql_base import OdooObjectType
@@ -37,6 +37,19 @@ InvoiceState = graphene.Enum('InvoiceState', [('Draft', 'draft'), ('Posted', 'po
 PaymentTransactionState = graphene.Enum('PaymentTransactionState', [('Draft', 'draft'), ('Pending', 'pending'),
                                                                ('Authorized', 'authorized'), ('Confirmed', 'done'),
                                                                ('Canceled', 'cancel'), ('Error', 'error')])
+
+
+def seo_metadata(record):
+    """Only what someone wrote in the record's SEO tab; the storefront's page
+    template covers everything else. Not Odoo's get_website_meta(): it adds
+    the website logo from the backend host, its own title format and the
+    GraphQL endpoint as og:url."""
+    meta = {
+        'title': record.website_meta_title or None,
+        'description': record.website_meta_description or None,
+        'image': record.website_meta_og_img or None,
+    }
+    return {key: value for key, value in meta.items() if value} or None
 
 
 class SortEnum(graphene.Enum):
@@ -255,7 +268,6 @@ class Category(OdooObjectType):
     childs = graphene.List(graphene.NonNull(lambda: Category))
     slug = graphene.String()
     products = graphene.List(graphene.NonNull(lambda: Product))
-    json_ld = generic.GenericScalar()
     page_message = graphene.String()
     image = graphene.String()
     small_image = graphene.String()
@@ -288,11 +300,8 @@ class Category(OdooObjectType):
     def resolve_products(self, info):
         return self.product_tmpl_ids or None
 
-    def resolve_json_ld(self, info):
-        return self and self.get_json_ld() or None
-
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
 
 class AttributeValue(OdooObjectType):
@@ -363,6 +372,64 @@ class Ribbon(OdooObjectType):
     display_name = graphene.String()
 
 
+class DataSource(OdooObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    name = graphene.String()
+
+
+class ProductMake(OdooObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    name = graphene.String()
+    data_source = graphene.Field(lambda: DataSource)
+
+    def resolve_data_source(self, info):
+        return self.data_source_id or None
+
+
+class TvhAvailabilityCode(OdooObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    description = graphene.String()
+
+
+class TvhUnitCode(OdooObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    description = graphene.String()
+    iso_code = graphene.String()
+
+
+class ProductApplication(OdooObjectType):
+    id = graphene.Int(required=True)
+    make = graphene.Field(lambda: ProductMake)
+    model = graphene.String()
+    serie = graphene.String()
+    vehicle_type_code = graphene.String()
+    vehicle_brand = graphene.String()
+    engine_brand = graphene.String()
+    engine_series = graphene.String()
+    engine_model = graphene.String()
+    brochure_id = graphene.Int()
+    brochure_name = graphene.String()
+    brochure_slug = graphene.String()
+
+    def resolve_make(self, info):
+        return self.make_id or None
+
+    def resolve_brochure_id(self, info):
+        return self.brochure_id.id if self.brochure_id else None
+
+    def resolve_brochure_name(self, info):
+        return self.brochure_id.name if self.brochure_id else None
+
+    def resolve_brochure_slug(self, info):
+        if not self.brochure_id:
+            return None
+        return self.brochure_id.website_slug or None
+
+
 class Product(OdooObjectType):
     id = graphene.Int(required=True)
     type_id = graphene.String()
@@ -379,6 +446,9 @@ class Product(OdooObjectType):
     meta_keyword = graphene.String()
     meta_description = graphene.String()
     image = graphene.String()
+    # Real pixel width of `image`: image_1920 is only an upper bound, a small
+    # upload stays small. Lets the frontend skip a too-small social preview.
+    image_width = graphene.Int()
     small_image = graphene.String()
     image_filename = graphene.String()
     thumbnail = graphene.String()
@@ -390,7 +460,7 @@ class Product(OdooObjectType):
     is_in_stock = graphene.Boolean()
     is_in_wishlist = graphene.Boolean()
     media_gallery = graphene.List(graphene.NonNull(lambda: ProductImage))
-    qty = graphene.Float()
+    qty = graphene.String()
     slug = graphene.String()
     alternative_products = graphene.List(graphene.NonNull(lambda: Product))
     accessory_products = graphene.List(graphene.NonNull(lambda: Product))
@@ -410,11 +480,43 @@ class Product(OdooObjectType):
                                      description='Specific to Product Template')
     product_variants = graphene.List(graphene.NonNull(lambda: Product), description='Specific to Product Template')
     first_variant = graphene.Field((lambda: Product), description='Specific to use in Product Template')
-    json_ld = generic.GenericScalar()
     popularity = graphene.Int()
     page_message = graphene.String()
     attachments = graphene.List(graphene.String)
     seo_metadata = generic.GenericScalar()
+
+    # --- product_catalog --------------------------------------------------------
+    default_code = graphene.String()
+    data_source = graphene.Field(lambda: DataSource)
+    make = graphene.Field(lambda: ProductMake)
+    is_dangerous_goods = graphene.Boolean()
+    weight_gr = graphene.Float()
+    length_mm = graphene.Float()
+    width_mm = graphene.Float()
+    height_mm = graphene.Float()
+    applications = graphene.List(graphene.NonNull(lambda: ProductApplication))
+
+    # --- TVH-specific ----------------------------------------------------------
+    # Purchase-side data (tvh_price, tvh_list_price, surcharges, TVH quantity tiers)
+    # is deliberately not exposed: this API is public. Customers see `price` only.
+    tvh_number = graphene.Int()
+    tvh_quantity_in_stock = graphene.String()
+    tvh_quantity_in_stock_be = graphene.String()
+    tvh_quantity_updated_at = graphene.String()
+    quality_brand = graphene.String()
+    unit_code = graphene.Field(lambda: TvhUnitCode)
+    stock_unit_matrix_desc = graphene.String()
+    availability_code = graphene.Field(lambda: TvhAvailabilityCode)
+    is_reconditioned = graphene.Boolean()
+    is_non_returnable = graphene.Boolean()
+    is_non_cancellable = graphene.Boolean()
+    minimum_order_quantity = graphene.Float()
+    orderable = graphene.Boolean()
+    not_orderable_reason = graphene.String()
+
+    # --- replacement chain -----------------------------------------------------
+    replaced_by = graphene.Field(lambda: Product)
+    latest_product = graphene.Field(lambda: Product)
 
     def resolve_type_id(self, info):
         if self.detailed_type == 'product':
@@ -454,6 +556,9 @@ class Product(OdooObjectType):
 
     def resolve_image(self, info):
         return '/web/image/{}/{}/image_1920'.format(self._name, self.id)
+
+    def resolve_image_width(self, info):
+        return tools.base64_to_image(self.image_1920).size[0] if self.image_1920 else None
 
     def resolve_small_image(self, info):
         return '/web/image/{}/{}/image_128'.format(self._name, self.id)
@@ -495,10 +600,12 @@ class Product(OdooObjectType):
             return self.product_template_image_ids + self.product_variant_image_ids or None
 
     def resolve_qty(self, info):
-        return self.free_qty
+        # tvh_quantity_in_stock is already formatted per the TVH Stockfile convention
+        # ("NO" / "1" / ... / "+10") when written by tvh.service.
+        return self.tvh_quantity_in_stock or 'NO'
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
 
     def resolve_alternative_products(self, info):
         return self.alternative_product_ids or None
@@ -543,7 +650,11 @@ class Product(OdooObjectType):
         return pricing_info or None
 
     def resolve_price(self, info):
-        return self.list_price or None
+        # Through the website pricelist: list_price is the TVH base price, the shop
+        # markup lives in the pricelist (product_catalog/data/pricelist_data.xml).
+        pricelist = self.env['website'].get_current_website().get_current_pricelist()
+        # rounded like order lines, so the shown price matches the cart
+        return pricelist.currency_id.round(pricelist._get_product_price(self, 1.0)) or None
 
     def resolve_attribute_values(self, info):
         return self.attribute_line_ids.product_template_value_ids or None
@@ -554,14 +665,41 @@ class Product(OdooObjectType):
     def resolve_first_variant(self, info):
         return self.product_variant_id or None
 
-    def resolve_json_ld(self, info):
-        return self and self.get_json_ld() or None
-
     def resolve_attachments(self, info):
         return [f'/web/content/product.attachment/{a.id}/attachment/{a.filename}' for a in self.product_attachment_ids]
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
+
+    # --- product_catalog resolvers -------------------------------------------
+    def resolve_data_source(self, info):
+        return self.data_source_id or None
+
+    def resolve_make(self, info):
+        return self.make_id or None
+
+    def resolve_applications(self, info):
+        return self.application_ids or None
+
+    # --- TVH resolvers --------------------------------------------------------
+    def resolve_tvh_quantity_updated_at(self, info):
+        return self.tvh_quantity_updated_at and self.tvh_quantity_updated_at.isoformat() or None
+
+    def resolve_unit_code(self, info):
+        return self.unit_code_id or None
+
+    def resolve_availability_code(self, info):
+        return self.availability_code_id or None
+
+    def resolve_orderable(self, info):
+        return bool(self.sale_ok)
+
+    # --- replacement chain ----------------------------------------------------
+    def resolve_replaced_by(self, info):
+        return self.replaced_by_id or None
+
+    def resolve_latest_product(self, info):
+        return self.latest_product_id or None
 
 
 class Payment(OdooObjectType):
@@ -634,6 +772,30 @@ class OrderLine(OdooObjectType):
         return coupon
 
 
+class OrderBrochureLine(OdooObjectType):
+    id = graphene.Int(required=True)
+    name = graphene.String()
+    make = graphene.String()
+    machine_serial = graphene.String()
+    part_number = graphene.String()
+    commentary = graphene.String()
+    quantity = graphene.Int()
+    brochure_id = graphene.Int()
+    brochure_name = graphene.String()
+    brochure_slug = graphene.String()
+
+    def resolve_brochure_id(self, info):
+        return self.brochure_id.id if self.brochure_id else None
+
+    def resolve_brochure_name(self, info):
+        return self.brochure_id.name if self.brochure_id else None
+
+    def resolve_brochure_slug(self, info):
+        if not self.brochure_id:
+            return None
+        return self.brochure_id.website_slug or None
+
+
 class Coupon(OdooObjectType):
     id = graphene.Int(required=True)
     code = graphene.String()
@@ -680,6 +842,7 @@ class Order(OdooObjectType):
     currency = graphene.Field(lambda: Currency)
     order_lines = graphene.List(graphene.NonNull(lambda: OrderLine))
     website_order_line = graphene.List(graphene.NonNull(lambda: OrderLine))
+    brochure_lines = graphene.List(graphene.NonNull(lambda: OrderBrochureLine))
     stage = OrderStage()
     order_url = graphene.String()
     transactions = graphene.List(graphene.NonNull(lambda: PaymentTransaction))
@@ -717,6 +880,9 @@ class Order(OdooObjectType):
 
     def resolve_website_order_line(self, info):
         return self.website_order_line or None
+
+    def resolve_brochure_lines(self, info):
+        return self.brochure_line_ids or None
 
     def resolve_stage(self, info):
         return self.state or None
@@ -971,10 +1137,10 @@ class Article(OdooObjectType):
             return f'/web/image/article.image/{images[0].id}/image_512'
 
     def resolve_slug(self, info):
-        return self.website_slug_override or self.website_slug or None
+        return self.website_slug or None
 
     def resolve_seo_metadata(self, info):
-        return self.get_website_meta() or None
+        return seo_metadata(self)
 
     def resolve_images(self, info):
         return self.article_images.sorted(key=lambda x: x.sequence)

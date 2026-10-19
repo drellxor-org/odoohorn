@@ -1,3 +1,5 @@
+import os
+
 from odoo import api, fields, models, _, SUPERUSER_ID
 
 
@@ -37,4 +39,8 @@ class SaleOrder(models.Model):
             if not mail_to_company:
                 continue
 
-            mail_to_company.send_mail(sale_order.id, force_send=True)
+            # Non-prod environments set ORDER_NOTIFICATION_EMAIL in .env: it lives outside the DB,
+            # so a restored prod dump keeps sending company copies there, not to the real inbox.
+            override = os.environ.get('ORDER_NOTIFICATION_EMAIL')
+            mail_to_company.send_mail(sale_order.id, force_send=True,
+                                      email_values={'email_to': override} if override else None)

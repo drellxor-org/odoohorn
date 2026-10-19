@@ -1,0 +1,15 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+brochure_user,brochure_user,model_brochure,base.group_user,1,0,0,0
+brochure_manager,brochure_manager,model_brochure,base.group_system,1,1,1,1
+brochure_public,brochure_public,model_brochure,base.group_public,1,0,0,0
+brochure_portal,brochure_portal,model_brochure,base.group_portal,1,0,0,0
+brochure_category_user,brochure_category_user,model_brochure_category,base.group_user,1,0,0,0
+brochure_category_manager,brochure_category_manager,model_brochure_category,base.group_system,1,1,1,1
+brochure_category_public,brochure_category_public,model_brochure_category,base.group_public,1,0,0,0
+brochure_category_portal,brochure_category_portal,model_brochure_category,base.group_portal,1,0,0,0
+brochure_attachment_user,brochure_attachment_user,model_brochure_attachment,base.group_user,1,0,0,0
+brochure_attachment_manager,brochure_attachment_manager,model_brochure_attachment,base.group_system,1,1,1,1
+brochure_attachment_public,brochure_attachment_public,model_brochure_attachment,base.group_public,1,0,0,0
+brochure_attachment_portal,brochure_attachment_portal,model_brochure_attachment,base.group_portal,1,0,0,0
+sale_order_brochure_line_user,sale_order_brochure_line_user,model_sale_order_brochure_line,base.group_user,1,1,1,1
+sale_order_brochure_line_portal,sale_order_brochure_line_portal,model_sale_order_brochure_line,base.group_portal,1,0,0,0

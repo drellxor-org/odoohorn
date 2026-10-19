@@ -1,4 +1,5 @@
 from . import main
+from . import sitemap
 
 # Implemented for frontend  purpose
 import werkzeug

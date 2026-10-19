@@ -20,6 +20,9 @@ _logger = logging.getLogger(__name__)
 
 
 class VSFBinary(Binary):
+    _VALID_DOWNLOAD = {'0', '1', 'yes', 'no', 'true', 'false', 'on', 'off',
+                       'y', 'n', 't', 'f'}
+
     @http.route(['/web/image',
                  '/web/image/<string:xmlid>',
                  '/web/image/<string:xmlid>/<string:filename>',
@@ -51,6 +54,11 @@ class VSFBinary(Binary):
                 return request.not_found()
         except Exception:
             return request.not_found()
+
+        # Odoo's super calls str2bool(download) and raises ValueError on any other value.
+        # Defensively coerce: anything not recognised becomes None (no download).
+        if download is not None and str(download).lower() not in self._VALID_DOWNLOAD:
+            download = 0
 
         return super(VSFBinary, self).content_image(
             xmlid=xmlid, model=model, id=id, field=field, filename_field=filename_field, unique=unique,
@@ -90,12 +98,20 @@ class GraphQLController(http.Controller, GraphQLControllerMixin):
         return super(GraphQLController, self)._process_request(schema, data)
 
     def _set_website_context(self):
-        """Set website context based on http_request_host header."""
+        """Website from the Request-Host header, language from the frontend_lang cookie.
+
+        Unknown or missing host falls back to the current website, so the language cookie
+        applies either way (before, a host that matched no website domain dropped it).
+        """
         try:
             request_host = request.httprequest.headers.environ.get('HTTP_REQUEST_HOST')
-            website = request.env['website'].search([('domain', 'ilike', request_host)], limit=1)
+            Website = request.env['website']
+            website = (request_host and Website.search([('domain', 'ilike', request_host)], limit=1)) \
+                or Website.get_current_website()
             if website:
                 preferred_lang = request.httprequest.cookies.get('frontend_lang')
+                if preferred_lang not in dict(request.env['res.lang'].get_installed()):
+                    preferred_lang = None
 
                 context = dict(request.context)
                 context.update({

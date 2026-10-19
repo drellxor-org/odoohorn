@@ -9,7 +9,8 @@ RUN mkdir -p /var/lib/odoo/.local/lib && chown -R odoo /var/lib/odoo/.local/lib 
   && mkdir -p /var/lib/odoo/.local/_pydevd_bundle && chown -R odoo /var/lib/odoo/.local/_pydevd_bundle \
   && mkdir -p /var/lib/odoo/.local/_pydevd_frame_eval && chown -R odoo /var/lib/odoo/.local/_pydevd_frame_eval \
   && mkdir -p /var/lib/odoo/.local/pydevd_attach_to_process && chown -R odoo /var/lib/odoo/.local/pydevd_attach_to_process \
-  && mkdir -p /var/lib/odoo/.local/bin && chown -R odoo /var/lib/odoo/.local/bin
+  && mkdir -p /var/lib/odoo/.local/bin && chown -R odoo /var/lib/odoo/.local/bin \
+  && mkdir -p /var/lib/odoo/.local/share/Odoo && chown -R odoo /var/lib/odoo/.local/share
 
 RUN chown -R odoo /usr/lib/python3/dist-packages/odoo
 

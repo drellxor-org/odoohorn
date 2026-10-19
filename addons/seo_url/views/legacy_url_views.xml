@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="legacy_url_view_tree" model="ir.ui.view">
+        <field name="name">legacy.url.tree</field>
+        <field name="model">legacy.url</field>
+        <field name="arch" type="xml">
+            <tree editable="bottom">
+                <field name="path"/>
+                <field name="res_model"/>
+                <field name="res_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_legacy_url" model="ir.actions.act_window">
+        <field name="name">Legacy URLs</field>
+        <field name="res_model">legacy.url</field>
+        <field name="view_mode">tree</field>
+        <field name="help" type="html">
+            <p>Old public paths that 301 to the record they now belong to.</p>
+        </field>
+    </record>
+
+    <!-- Our own "Website" app: Odoo's website app stays hidden (simplify_odoo),
+         its builder isn't the storefront. -->
+    <menuitem id="menu_website_root" name="Website" web_icon="website,static/description/icon.png"
+              sequence="60" groups="base.group_system"/>
+    <menuitem id="menu_legacy_url" name="Legacy URLs" parent="menu_website_root"
+              action="action_legacy_url" sequence="10"/>
+</odoo>

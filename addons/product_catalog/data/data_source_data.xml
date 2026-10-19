@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="data_source_tvh" model="data.source">
+        <field name="name">TVH</field>
+        <field name="code">TVH</field>
+    </record>
+</odoo>

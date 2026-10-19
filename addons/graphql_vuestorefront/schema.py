@@ -9,14 +9,15 @@ from odoo.addons.graphql_vuestorefront.schemas import (
     article, country, category, product, order,
     invoice, contact_us, user_profile, sign,
     address, wishlist, shop, payment,
-    mailing_list, website, feedback, language, about, sitemap
+    mailing_list, website, feedback, language, about,
+    brochure, objects, search,
 )
 
 
 class Query(
     OdooObjectType,
     article.ArticleQuery,
-    # country.CountryQuery,
+    country.CountryQuery,
     category.CategoryQuery,
     product.ProductQuery,
     # order.OrderQuery,
@@ -31,7 +32,9 @@ class Query(
     # website.WebsiteQuery,
     language.LanguageQuery,
     about.AboutQuery,
-    sitemap.SitemapQuery
+    brochure.BrochureQuery,
+    brochure.BrochureCategoryQuery,
+    search.SearchQuery,
 ):
     pass
 
@@ -48,7 +51,8 @@ class Mutation(
     # payment.AdyenPaymentMutation,
     # mailing_list.NewsletterSubscribeMutation,
     # order.OrderMutation,
-    feedback.FeedbackMutation
+    feedback.FeedbackMutation,
+    product.ProductMutation,
 ):
     pass
 
@@ -58,5 +62,12 @@ schema = graphene.Schema(
     mutation=Mutation,
     types=[country.CountryList, category.CategoryList, product.ProductList, product.ProductVariantData, order.OrderList,
            invoice.InvoiceList, wishlist.WishlistData, shop.CartData, mailing_list.MailingContactList,
-           mailing_list.MailingListList]
+           mailing_list.MailingListList, brochure.BrochureList, brochure.Brochure, brochure.BrochureCategory,
+           brochure.BrochureAttachment,
+           objects.DataSource, objects.ProductMake, objects.ProductApplication,
+           objects.TvhAvailabilityCode, objects.TvhUnitCode,
+           product.FacetValue,
+           search.ParsedQuery, search.Suggestion,
+           search.SearchProductsSlice, search.SearchBrochuresSlice, search.SearchArticlesSlice,
+           search.SearchResult]
 )

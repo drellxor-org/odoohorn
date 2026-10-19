@@ -32,7 +32,16 @@ def get_search_order(sort):
     return sorting
 
 
-def get_search_domain(env, search, **kwargs):
+CATEGORY_LEVEL_KEYS = ('family_ids', 'subfamily_ids', 'subsubfamily_ids')
+
+
+def get_search_domain(env, search, exclude_facet=None, **kwargs):
+    """Build the product search domain.
+
+    `exclude_facet` is one of {'make_ids','family_ids','subfamily_ids','subsubfamily_ids'};
+    when set, that filter is dropped (used by facet aggregation so the user sees
+    sibling options).
+    """
     # Only get published products
     domains = [env['website'].get_current_website().sale_product_domain()]
 
@@ -47,6 +56,14 @@ def get_search_domain(env, search, **kwargs):
     # Filter with Category Slug
     if kwargs.get('category_slug', False):
         domains.append([('public_categ_slug_ids.website_slug', '=', kwargs['category_slug'])])
+
+    # Facet filters — nested under filter.facets in the GraphQL input.
+    facets = kwargs.get('facets') or {}
+    if facets.get('make_ids') and exclude_facet != 'make_ids':
+        domains.append([('make_id', 'in', facets['make_ids'])])
+    for key in CATEGORY_LEVEL_KEYS:
+        if facets.get(key) and exclude_facet != key:
+            domains.append([('public_categ_ids', 'child_of', facets[key])])
 
     # Filter With Name
     if kwargs.get('name', False):
@@ -101,7 +118,37 @@ def get_search_domain(env, search, **kwargs):
     return expression.AND(domains), expression.AND(partial_domain)
 
 
+def _category_depth(category):
+    """0 for top-level family, 1 for subfamily, 2 for sub-subfamily."""
+    return (category.parent_path or '').count('/') - 1
+
+
+def _aggregate_makes(Product, domain):
+    groups = Product.read_group(domain, ['make_id'], ['make_id'])
+    makes = Product.env['product.make'].browse([g['make_id'][0] for g in groups if g['make_id']])
+    counts = {g['make_id'][0]: g['make_id_count'] for g in groups if g['make_id']}
+    return [{'id': m.id, 'name': m.name, 'code': m.code, 'count': counts[m.id], 'parent_id': None}
+            for m in makes]
+
+
+def _aggregate_categories(Product, domain):
+    """{depth: [facet]} over public_categ_slug_ids, which already includes ancestors."""
+    groups = Product.read_group(domain, ['public_categ_slug_ids'], ['public_categ_slug_ids'])
+    counts = {g['public_categ_slug_ids'][0]: g['public_categ_slug_ids_count']
+              for g in groups if g['public_categ_slug_ids']}
+    by_depth = {0: [], 1: [], 2: []}
+    for c in Product.env['product.public.category'].browse(list(counts)):
+        depth = _category_depth(c)
+        if depth in by_depth:
+            by_depth[depth].append({'id': c.id, 'name': c.display_name or c.name,
+                                    'parent_id': c.parent_id.id or None,
+                                    'count': counts[c.id], 'code': None})
+    return by_depth
+
+
 def get_product_list(env, current_page, page_size, search, sort, **kwargs):
+    """Counting, price range and facets run as SQL aggregates: loading every matching
+    record to aggregate in Python cost ~1s per query once the 13.5k TVH catalog landed."""
     Product = env['product.template'].sudo()
     domain, partial_domain = get_search_domain(env, search, **kwargs)
 
@@ -111,22 +158,34 @@ def get_product_list(env, current_page, page_size, search, sort, **kwargs):
     else:
         offset = 0
     order = get_search_order(sort)
-    products = Product.search(domain, order=order)
+    total_count = Product.search_count(domain)
+    paged = Product.search(domain, order=order, offset=offset, limit=page_size)
 
-    # If attribute values are selected, we need to get the full list of attribute values and prices
-    if domain == partial_domain:
-        attribute_values = products.mapped('variant_attribute_value_ids')
-        prices = products.mapped('list_price')
-    else:
-        without_attributes_products = Product.search(partial_domain)
-        attribute_values = without_attributes_products.mapped('variant_attribute_value_ids')
-        prices = without_attributes_products.mapped('list_price')
+    # Price range and attribute values ignore the price/attribute filters themselves,
+    # so the filter UI can still offer the full range.
+    stats = Product.read_group(partial_domain,
+                               ['min_price:min(list_price)', 'max_price:max(list_price)'], [])[0]
+    attribute_values = env['product.attribute.value'].browse([
+        g['variant_attribute_value_ids'][0]
+        for g in Product.read_group(partial_domain, ['variant_attribute_value_ids'],
+                                    ['variant_attribute_value_ids'])
+        if g['variant_attribute_value_ids']])
 
-    total_count = len(products)
-    products = products[offset:offset + page_size]
-    if prices:
-        return products, total_count, attribute_values, min(prices), max(prices)
-    return products, total_count, attribute_values, 0.0, 0.0
+    # Facets — strict style: all dimensions are computed from the already-filtered
+    # product set, so the available options never exceed what the current filter
+    # actually contains.
+    available_makes = _aggregate_makes(Product, domain)
+    categories = _aggregate_categories(Product, domain)
+
+    return (paged, total_count, attribute_values, stats['min_price'] or 0.0, stats['max_price'] or 0.0,
+            available_makes, categories[0], categories[1], categories[2])
+
+
+class ProductFacets(graphene.ObjectType):
+    makes = graphene.List(graphene.NonNull(lambda: FacetValue))
+    families = graphene.List(graphene.NonNull(lambda: FacetValue))
+    subfamilies = graphene.List(graphene.NonNull(lambda: FacetValue))
+    subsubfamilies = graphene.List(graphene.NonNull(lambda: FacetValue))
 
 
 class Products(graphene.Interface):
@@ -135,11 +194,19 @@ class Products(graphene.Interface):
     attribute_values = graphene.List(AttributeValue)
     min_price = graphene.Float()
     max_price = graphene.Float()
+    facets = graphene.Field(ProductFacets)
 
 
 class ProductList(graphene.ObjectType):
     class Meta:
         interfaces = (Products,)
+
+
+class FacetFilterInput(graphene.InputObjectType):
+    make_ids = graphene.List(graphene.Int)
+    family_ids = graphene.List(graphene.Int)
+    subfamily_ids = graphene.List(graphene.Int)
+    subsubfamily_ids = graphene.List(graphene.Int)
 
 
 class ProductFilterInput(graphene.InputObjectType):
@@ -152,6 +219,15 @@ class ProductFilterInput(graphene.InputObjectType):
     name = graphene.String()
     min_price = graphene.Float()
     max_price = graphene.Float()
+    facets = graphene.Field(FacetFilterInput)
+
+
+class FacetValue(graphene.ObjectType):
+    id = graphene.Int(required=True)
+    code = graphene.String()
+    name = graphene.String()
+    parent_id = graphene.Int()
+    count = graphene.Int(required=True)
 
 
 class ProductSortInput(graphene.InputObjectType):
@@ -215,7 +291,8 @@ class ProductQuery(graphene.ObjectType):
         if id:
             product = Product.search([('id', '=', id)], limit=1)
         elif slug:
-            product = Product.search(['|', ('website_slug', '=', slug), ('website_slug_override', '=', slug)], limit=1)
+            # A url is public only while the record is: unpublished parts 404.
+            product = Product.search([('website_slug', '=', slug), ('is_published', '=', True)], limit=1)
         elif barcode:
             product = Product.search([('barcode', '=', barcode)], limit=1)
         else:
@@ -227,7 +304,8 @@ class ProductQuery(graphene.ObjectType):
             if not product.can_access_from_current_website():
                 product = Product
 
-        return product
+        # null rather than an empty record, which fails the non-null Product.id.
+        return product or None
 
     @staticmethod
     def resolve_products(self, info, filter, current_page, page_size, search, sort):
@@ -236,10 +314,24 @@ class ProductQuery(graphene.ObjectType):
         website = env['website'].get_current_website()
         request.website = website
 
-        products, total_count, attribute_values,min_price, max_price = get_product_list(
+        (products, total_count, attribute_values, min_price, max_price,
+         available_makes, available_families, available_subfamilies,
+         available_subsubfamilies) = get_product_list(
             env, current_page, page_size, search, sort, **filter)
-        return ProductList(products=products, total_count=total_count, attribute_values=attribute_values,
-                           min_price=min_price, max_price=max_price)
+        facets = ProductFacets(
+            makes=[FacetValue(**f) for f in available_makes],
+            families=[FacetValue(**f) for f in available_families],
+            subfamilies=[FacetValue(**f) for f in available_subfamilies],
+            subsubfamilies=[FacetValue(**f) for f in available_subsubfamilies],
+        )
+        return ProductList(
+            products=products,
+            total_count=total_count,
+            attribute_values=attribute_values,
+            min_price=min_price,
+            max_price=max_price,
+            facets=facets,
+        )
 
     @staticmethod
     def resolve_attribute(self, info, id):
@@ -282,3 +374,25 @@ class ProductQuery(graphene.ObjectType):
             has_discounted_price=variant_info['has_discounted_price'],
             is_combination_possible=variant_info['is_combination_possible']
         )
+
+
+class RefreshProductFromTvh(graphene.Mutation):
+    class Arguments:
+        product_id = graphene.Int(required=True)
+
+    Output = Product
+
+    @staticmethod
+    def mutate(self, info, product_id):
+        env = info.context["env"]
+        request.website = env["website"].get_current_website()
+        product = env["product.template"].sudo().browse(product_id).exists()
+        if not product:
+            raise GraphQLError(f"Product {product_id} not found")
+        env["tvh.service"].refresh_product(product)
+        return product
+
+
+class ProductMutation(graphene.ObjectType):
+    refresh_product_from_tvh = RefreshProductFromTvh.Field(
+        description="Fetch fresh price / stock / alternatives / replacement info from the TVH inquiry API and apply to the product template.")

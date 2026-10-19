@@ -1,0 +1,89 @@
+# GlitchTip — Sentry-compatible error tracker (much lighter than real Sentry self-hosted).
+# Same DSN format works with sentry-sdk and the OCA `sentry` addon — no code changes.
+#
+# Bring up:    docker compose -f docker-compose-sentry.yml up -d
+# First-time:  docker compose -f docker-compose-sentry.yml exec web ./manage.py createsuperuser
+# UI:          http://localhost:8001
+# Then:        create a project, copy its DSN, paste into SENTRY_DSN in
+#              config/development/.env, and `docker compose up -d odoohorn`.
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+      POSTGRES_DB: glitchtip
+    volumes:
+      - sentry_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - sentry_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  web:
+    image: glitchtip/glitchtip:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    ports:
+      - "8001:8000"
+    environment: &glitchtip-env
+      DATABASE_URL: "postgres://postgres@postgres:5432/glitchtip"
+      REDIS_URL: "redis://redis:6379/0"
+      # Replace with a random 50+ char string in production.
+      SECRET_KEY: "change-me-to-a-long-random-string-before-going-anywhere-near-prod"
+      PORT: "8000"
+      GLITCHTIP_DOMAIN: "http://localhost:8001"
+      DEFAULT_FROM_EMAIL: "sentry@localhost"
+      # For dev: prints emails to stdout. For real use, switch to smtp://user:pass@host:587
+      EMAIL_URL: "consolemail://"
+      # First registered user becomes admin; disable open signups for staging/prod.
+      ENABLE_USER_REGISTRATION: "true"
+      ENABLE_ORGANIZATION_CREATION: "true"
+      CELERY_WORKER_AUTOSCALE: "1,3"
+      CELERY_WORKER_MAX_TASKS_PER_CHILD: "10000"
+    volumes:
+      - sentry_uploads:/code/uploads
+
+  worker:
+    image: glitchtip/glitchtip:latest
+    command: ./bin/run-celery-with-beat.sh
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    environment: *glitchtip-env
+    volumes:
+      - sentry_uploads:/code/uploads
+
+  migrate:
+    image: glitchtip/glitchtip:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ./manage.py migrate
+    environment: *glitchtip-env
+    restart: "no"
+
+volumes:
+  sentry_postgres_data:
+  sentry_redis_data:
+  sentry_uploads:

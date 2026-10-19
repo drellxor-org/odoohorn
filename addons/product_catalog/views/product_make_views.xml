@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_make_tree" model="ir.ui.view">
+        <field name="name">product.make.tree</field>
+        <field name="model">product.make</field>
+        <field name="arch" type="xml">
+            <tree string="Makes">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="data_source_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="product_make_form" model="ir.ui.view">
+        <field name="name">product.make.form</field>
+        <field name="model">product.make</field>
+        <field name="arch" type="xml">
+            <form string="Make">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="name"/>
+                        <field name="data_source_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="product_make_search" model="ir.ui.view">
+        <field name="name">product.make.search</field>
+        <field name="model">product.make</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="data_source_id"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_source" string="Data source"
+                            domain="[]" context="{'group_by': 'data_source_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_product_make" model="ir.actions.act_window">
+        <field name="name">Makes</field>
+        <field name="res_model">product.make</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

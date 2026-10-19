@@ -1,0 +1,11 @@
+/config/development/.env
+/config/development/nginx.conf
+/config/development/odoo.conf
+
+# JetBrains IDE (project + run configs — local to each dev)
+/.idea/
+/.run/
+
+# Python bytecode (also written by the dev container into the mounted addons)
+__pycache__/
+*.pyc

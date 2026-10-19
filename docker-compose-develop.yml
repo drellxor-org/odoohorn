@@ -28,3 +28,10 @@ services:
       - "5432:5432"
     volumes:
       - ../postgres_data:/var/lib/postgresql/data
+networks:
+  default:
+    # Prod's DOCKER-USER firewall rules (/etc/iptables/rules.v4) allow only this
+    # range to 5432/8069; an auto-assigned subnet after `down` blocks odoo -> postgres.
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16

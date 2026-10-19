@@ -42,5 +42,11 @@ class SaleOrder(models.Model):
             # Non-prod environments set ORDER_NOTIFICATION_EMAIL in .env: it lives outside the DB,
             # so a restored prod dump keeps sending company copies there, not to the real inbox.
             override = os.environ.get('ORDER_NOTIFICATION_EMAIL')
-            mail_to_company.send_mail(sale_order.id, force_send=True,
-                                      email_values={'email_to': override} if override else None)
+            # Optional extra recipient(s), comma-separated: Settings → Technical → System Parameters.
+            copy = self.env['ir.config_parameter'].sudo().get_param('order_product_info.order_copy_email')
+            email_values = {}
+            if override:
+                email_values['email_to'] = override
+            if copy:
+                email_values['email_cc'] = copy
+            mail_to_company.send_mail(sale_order.id, force_send=True, email_values=email_values or None)
